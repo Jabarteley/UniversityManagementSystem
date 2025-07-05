@@ -28,7 +28,7 @@ const Dashboard: React.FC = () => {
 
   const { data: staffData, isLoading: staffLoading } = useQuery(
     'staff',
-    () => staffAPI.getAll(),
+    () => staffAPI.getAll({ limit: 10000 }),
     {
       enabled: user?.role === 'admin' || user?.role === 'system-admin',
       onSuccess: (data) => console.log('Staff Data:', data),
@@ -41,7 +41,7 @@ const Dashboard: React.FC = () => {
 
   const { data: studentsData, isLoading: studentsLoading } = useQuery(
     'students',
-    () => studentsAPI.getAll(),
+    () => studentsAPI.getAll({ limit: 10000 }),
     {
       enabled: user?.role === 'admin' || user?.role === 'system-admin',
       onSuccess: (data) => console.log('Students Data:', data),
@@ -470,7 +470,7 @@ const Dashboard: React.FC = () => {
   const adminStats = [
     {
       title: 'Total Students',
-      value: studentsData?.students?.length || 0,
+      value:  studentsData?.pagination?.total || 0,
       icon: GraduationCap,
       color: 'bg-blue-500',
       change: '+12%',
@@ -478,7 +478,7 @@ const Dashboard: React.FC = () => {
     },
     {
       title: 'Total Staff',
-      value: staffData?.staff?.length || 0,
+      value: staffData?.pagination?.total || 0,
       icon: UserCheck,
       color: 'bg-green-500',
       change: '+8%',

@@ -5,6 +5,8 @@ import { Plus, Filter, Search, Mail, Phone, Shield, Calendar, UserCheck, Setting
 import { usersAPI } from '../api/users';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import AddUserModal from '../components/Users/AddUserModal';
+
 
 const Users: React.FC = () => {
   const [filters, setFilters] = useState({
@@ -351,49 +353,12 @@ const Users: React.FC = () => {
 
       {/* Add/Edit User Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">
-                {selectedUser ? 'Edit User' : 'Add New User'}
-              </h3>
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setSelectedUser(null);
-                }}
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <p className="text-gray-600 mb-4">
-              User management functionality will be implemented here.
-            </p>
-            <div className="flex space-x-3">
-              <button 
-                onClick={() => {
-                  setShowAddModal(false);
-                  setSelectedUser(null);
-                }}
-                className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => {
-                  toast.info('User form functionality coming soon!');
-                  setShowAddModal(false);
-                  setSelectedUser(null);
-                }}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                {selectedUser ? 'Update' : 'Add'} User
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+  <AddUserModal isOpen={showAddModal} onClose={() => {
+    setShowAddModal(false);
+    setSelectedUser(null);
+  }} />
+)}
+
     </div>
   );
 };
