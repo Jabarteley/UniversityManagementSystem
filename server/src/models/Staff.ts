@@ -168,14 +168,7 @@ export interface IStaff extends Document {
   };
   
   // Documents and Files
-  documents: [{
-    type: string;
-    name: string;
-    cloudinaryId: string;
-    url: string;
-    uploadDate: Date;
-    verified: boolean;
-  }];
+  documents: mongoose.Types.ObjectId[];
   
   // Emergency Contact
   emergencyContact: {
@@ -409,12 +402,8 @@ const staffSchema = new Schema<IStaff>({
     }]
   },
   documents: [{
-    type: { type: String, required: true },
-    name: { type: String, required: true },
-    cloudinaryId: { type: String, required: true },
-    url: { type: String, required: true },
-    uploadDate: { type: Date, default: Date.now },
-    verified: { type: Boolean, default: false }
+    type: Schema.Types.ObjectId,
+    ref: 'Document'
   }],
   emergencyContact: {
     name: { type: String, required: true },
@@ -442,8 +431,7 @@ const staffSchema = new Schema<IStaff>({
 });
 
 // Indexes for performance
-staffSchema.index({ staffId: 1 });
-staffSchema.index({ userId: 1 });
+
 staffSchema.index({ 'employmentInfo.department': 1 });
 staffSchema.index({ 'employmentInfo.faculty': 1 });
 staffSchema.index({ 'employmentInfo.employmentType': 1 });

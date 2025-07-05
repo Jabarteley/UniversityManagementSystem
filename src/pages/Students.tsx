@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AddStudentModal from '../components/Students/AddStudentModal'; 
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
 import { Plus, Filter, Search, Mail, Phone, GraduationCap, Calendar, User, BookOpen } from 'lucide-react';
@@ -6,6 +7,7 @@ import { studentsAPI } from '../api/students';
 import { format } from 'date-fns';
 
 const Students: React.FC = () => {
+  const [showAddModal, setShowAddModal] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
     faculty: '',
@@ -79,10 +81,14 @@ const Students: React.FC = () => {
               <Filter className="h-4 w-4 mr-2" />
               Filter
             </button>
-            <button className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Student
-            </button>
+            <button
+  onClick={() => setShowAddModal(true)}
+  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+>
+  <Plus className="h-4 w-4 mr-2" />
+  Add Student
+</button>
+
           </motion.div>
         </div>
       </div>
@@ -261,8 +267,9 @@ const Students: React.FC = () => {
           ))}
         </div>
       )}
+    <AddStudentModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} />
     </div>
   );
 };
 
-export default Students;
+export default Students; 

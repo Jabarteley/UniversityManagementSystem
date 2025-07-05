@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { motion } from 'framer-motion';
-import { Plus, Filter, Search, Mail, Phone, Shield, Calendar, UserCheck, Settings, Edit, Trash2 } from 'lucide-react';
+import { Plus, Filter, Search, Mail, Phone, Shield, Calendar, UserCheck, Settings, Edit, Trash2, X } from 'lucide-react';
 import { usersAPI } from '../api/users';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -106,7 +106,7 @@ const Users: React.FC = () => {
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-2xl font-bold text-gray-900 mb-2">User Management</h1>
-            <p className="text-gray-600">Add/manage users, reset/change passwords, view user list</p>
+            <p className="text-gray-600">Manage system users, roles, and permissions</p>
           </motion.div>
           
           <motion.div
@@ -306,7 +306,7 @@ const Users: React.FC = () => {
 
                 <div className="flex items-center text-sm text-gray-500">
                   <Calendar className="h-4 w-4 mr-2" />
-                  <span>Joined {format(new Date(user.createdAt), 'MMM d, yyyy')}</span>
+                  <span>Joined {user.createdAt ? format(new Date(user.createdAt), 'MMM d, yyyy') : 'N/A'}</span>
                 </div>
               </div>
 
@@ -353,9 +353,20 @@ const Users: React.FC = () => {
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">
-              {selectedUser ? 'Edit User' : 'Add New User'}
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">
+                {selectedUser ? 'Edit User' : 'Add New User'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowAddModal(false);
+                  setSelectedUser(null);
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             <p className="text-gray-600 mb-4">
               User management functionality will be implemented here.
             </p>

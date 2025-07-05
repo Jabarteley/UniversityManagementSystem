@@ -65,14 +65,7 @@ export interface IStudent extends Document {
   }];
   
   // Documents and Files
-  documents: [{
-    type: string;
-    name: string;
-    cloudinaryId: string;
-    url: string;
-    uploadDate: Date;
-    verified: boolean;
-  }];
+  documents: mongoose.Types.ObjectId[];
   
   // Medical Information
   medical: {
@@ -183,12 +176,8 @@ const studentSchema = new Schema<IStudent>({
     remarks: String
   }],
   documents: [{
-    type: { type: String, required: true },
-    name: { type: String, required: true },
-    cloudinaryId: { type: String, required: true },
-    url: { type: String, required: true },
-    uploadDate: { type: Date, default: Date.now },
-    verified: { type: Boolean, default: false }
+    type: Schema.Types.ObjectId,
+    ref: 'Document'
   }],
   medical: {
     bloodGroup: String,
@@ -218,8 +207,7 @@ const studentSchema = new Schema<IStudent>({
 });
 
 // Indexes for performance
-studentSchema.index({ registrationNumber: 1 });
-studentSchema.index({ userId: 1 });
+
 studentSchema.index({ 'academicInfo.faculty': 1 });
 studentSchema.index({ 'academicInfo.department': 1 });
 studentSchema.index({ 'academicInfo.level': 1 });

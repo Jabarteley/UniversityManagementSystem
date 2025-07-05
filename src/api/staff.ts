@@ -63,6 +63,7 @@ export interface Staff {
     effectiveDate: string;
     reason: string;
   }>;
+  documents: string[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

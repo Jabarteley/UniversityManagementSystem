@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { motion } from 'framer-motion';
 import { Plus, Filter, Search, Upload, Download, FolderOpen, FileText, Image, Video, Eye, Trash2 } from 'lucide-react';
-import { filesAPI } from '../api/files';
+import { documentsAPI } from '../api/documents';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
@@ -19,7 +19,7 @@ const Files: React.FC = () => {
 
   const { data, isLoading, error } = useQuery(
     ['files', filters],
-    () => filesAPI.getAll(filters),
+    () => documentsAPI.getAll(filters),
     {
       keepPreviousData: true,
       retry: 1,
@@ -31,7 +31,7 @@ const Files: React.FC = () => {
   );
 
   const uploadMutation = useMutation(
-    (formData: FormData) => filesAPI.upload(formData),
+    (formData: FormData) => documentsAPI.upload(formData),
     {
       onSuccess: () => {
         toast.success('File uploaded successfully');
@@ -47,7 +47,7 @@ const Files: React.FC = () => {
   );
 
   const deleteMutation = useMutation(
-    (fileId: string) => filesAPI.delete(fileId),
+    (fileId: string) => documentsAPI.delete(fileId),
     {
       onSuccess: () => {
         toast.success('File deleted successfully');
@@ -74,6 +74,7 @@ const Files: React.FC = () => {
     formData.append('category', 'other');
     formData.append('accessLevel', 'restricted');
     formData.append('description', 'Uploaded file');
+    formData.append('title', selectedFiles[0].name.split('.')[0]);
 
     uploadMutation.mutate(formData);
   };
@@ -382,10 +383,15 @@ const Files: React.FC = () => {
                       <Eye className="h-3 w-3 mr-1" />
                       View
                     </button>
-                    <button className="flex items-center text-xs text-green-600 hover:text-green-700 transition-colors">
+                    <a
+                      href={`/api/documents/${file._id}/download`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center text-xs text-green-600 hover:text-green-700 transition-colors"
+                    >
                       <Download className="h-3 w-3 mr-1" />
                       Download
-                    </button>
+                    </a>
                   </div>
                   <button 
                     onClick={() => handleDeleteFile(file._id)}

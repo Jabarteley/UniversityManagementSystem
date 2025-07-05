@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Plus, Filter, Search, Mail, Phone, Building, Calendar, UserCheck, Award, Edit, Trash2 } from 'lucide-react';
 import { staffAPI } from '../api/staff';
 import { format } from 'date-fns';
-import toast from 'react-hot-toast';
+import AddStaffModal from '../components/Staff/AddStaffModal';
 
 const Staff: React.FC = () => {
   const [filters, setFilters] = useState({
@@ -371,40 +371,7 @@ const Staff: React.FC = () => {
         </div>
       )}
 
-      {/* Add/Edit Staff Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">
-              {selectedStaff ? 'Edit Staff' : 'Add New Staff'}
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Staff management functionality will be implemented here.
-            </p>
-            <div className="flex space-x-3">
-              <button 
-                onClick={() => {
-                  setShowAddModal(false);
-                  setSelectedStaff(null);
-                }}
-                className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => {
-                  toast.info('Staff form functionality coming soon!');
-                  setShowAddModal(false);
-                  setSelectedStaff(null);
-                }}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                {selectedStaff ? 'Update' : 'Add'} Staff
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AddStaffModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} />
     </div>
   );
 };

@@ -142,7 +142,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       icon: BookOpen,
     },
     {
-      name: 'Files',
+      name: 'Documents',
       href: '/files',
       icon: FolderOpen,
     },

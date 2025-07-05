@@ -98,54 +98,12 @@ function App() {
                         <Route path="/dashboard" element={<Dashboard />} />
                         
                         {/* Admin Only Routes */}
-                        <Route 
-                          path="/personnel/students" 
-                          element={
-                            <RoleBasedRoute allowedRoles={['admin', 'system-admin']}>
-                              <Students />
-                            </RoleBasedRoute>
-                          } 
-                        />
-                        <Route 
-                          path="/personnel/staff" 
-                          element={
-                            <RoleBasedRoute allowedRoles={['admin', 'system-admin']}>
-                              <Staff />
-                            </RoleBasedRoute>
-                          } 
-                        />
-                        <Route 
-                          path="/activities" 
-                          element={
-                            <RoleBasedRoute allowedRoles={['admin', 'system-admin']}>
-                              <Activities />
-                            </RoleBasedRoute>
-                          } 
-                        />
-                        <Route 
-                          path="/records" 
-                          element={
-                            <RoleBasedRoute allowedRoles={['admin', 'system-admin']}>
-                              <Records />
-                            </RoleBasedRoute>
-                          } 
-                        />
-                        <Route 
-                          path="/files" 
-                          element={
-                            <RoleBasedRoute allowedRoles={['admin', 'system-admin']}>
-                              <Files />
-                            </RoleBasedRoute>
-                          } 
-                        />
-                        <Route 
-                          path="/users" 
-                          element={
-                            <RoleBasedRoute allowedRoles={['admin', 'system-admin']}>
-                              <Users />
-                            </RoleBasedRoute>
-                          } 
-                        />
+                        <Route path="/personnel/students" element={<RoleBasedRoute allowedRoles={['admin', 'system-admin']}><Students /></RoleBasedRoute>} />
+                        <Route path="/personnel/staff" element={<RoleBasedRoute allowedRoles={['admin', 'system-admin']}><Staff /></RoleBasedRoute>} />
+                        <Route path="/activities" element={<RoleBasedRoute allowedRoles={['admin', 'system-admin']}><Activities /></RoleBasedRoute>} />
+                        <Route path="/records" element={<RoleBasedRoute allowedRoles={['admin', 'system-admin']}><Records /></RoleBasedRoute>} />
+                        <Route path="/files" element={<RoleBasedRoute allowedRoles={['admin', 'system-admin']}><Files /></RoleBasedRoute>} />
+                        <Route path="/users" element={<RoleBasedRoute allowedRoles={['admin', 'system-admin']}><Users /></RoleBasedRoute>} />
                         
                         {/* Admin & Staff Routes */}
                         <Route 

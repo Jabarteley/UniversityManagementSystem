@@ -148,15 +148,9 @@ const userSchema = new Schema<IUser>({
 });
 
 // Indexes for performance
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
-userSchema.index({ role: 1 });
-userSchema.index({ recordRef: 1, recordType: 1 });
+userSchema.index({ role: 1 }); // ✅ Keep this if you query by role
+userSchema.index({ recordRef: 1, recordType: 1 }); // ✅ Keep this if you query by referenced records
 
-// // Virtual for account lock status
-// userSchema.virtual('isLocked').get(function() {
-//   return !!(this.lockUntil && this.lockUntil > Date.now());
-// });
 
 // Pre-save middleware to hash password
 userSchema.pre('save', async function(next) {

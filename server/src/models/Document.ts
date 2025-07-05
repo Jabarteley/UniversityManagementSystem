@@ -276,7 +276,7 @@ documentSchema.index({ status: 1 });
 documentSchema.index({ accessLevel: 1 });
 documentSchema.index({ tags: 1 });
 documentSchema.index({ createdAt: -1 });
-documentSchema.index({ cloudinaryId: 1 });
+
 documentSchema.index({ isActive: 1, isArchived: 1 });
 
 // Pre-save middleware to update searchable text and analytics

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, X, FileText, Image, Video, Music, File, CheckCircle, AlertCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import { documentsAPI } from '../../api/documents';
 
 interface DocumentUploadProps {
   onUploadComplete?: (document: any) => void;
@@ -107,26 +108,15 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadComplete, onClo
         }, 500);
 
         try {
-          const response = await fetch('/api/documents/upload', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: formData
-          });
+          const result = await documentsAPI.upload(formData);
 
           clearInterval(progressInterval);
           setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
 
-          if (response.ok) {
-            const result = await response.json();
-            setUploadStatus(prev => ({ ...prev, [file.name]: 'success' }));
-            
-            if (onUploadComplete) {
-              onUploadComplete(result.document);
-            }
-          } else {
-            throw new Error('Upload failed');
+          setUploadStatus(prev => ({ ...prev, [file.name]: 'success' }));
+          
+          if (onUploadComplete) {
+            onUploadComplete(result.document);
           }
         } catch (error) {
           clearInterval(progressInterval);

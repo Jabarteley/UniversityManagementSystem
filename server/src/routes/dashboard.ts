@@ -1,7 +1,7 @@
 import express from 'express';
 import Student from '../models/Student.js';
 import Staff from '../models/Staff.js';
-import File from '../models/File.js';
+import Document from '../models/Document.js';
 import Report from '../models/Report.js';
 import User from '../models/User.js';
 import { auth, AuthRequest } from '../middleware/auth.js';
@@ -15,18 +15,10 @@ router.get('/stats', auth, async (req: AuthRequest, res) => {
     logger.debug('Fetching dashboard stats for user:', req.user?.email);
 
     // Get basic counts
-    const [
-      totalStudents,
-      totalStaff,
-      totalFiles,
-      totalReports,
-      totalUsers,
-      activeStudents,
-      activeStaff
-    ] = await Promise.all([
-      Student.countDocuments({ isActive: { $ne: false } }),
-      Staff.countDocuments({ isActive: { $ne: false } }),
-      File.countDocuments({ isArchived: { $ne: true } }),
+    const [totalStudents, totalStaff, totalFiles, totalReports, totalUsers, activeStudents, activeStaff] = await Promise.all([
+      User.countDocuments({ role: 'student', isActive: { $ne: false } }),
+      User.countDocuments({ role: 'staff', isActive: { $ne: false } }),
+      Document.countDocuments({ isArchived: { $ne: true } }),
       Report.countDocuments(),
       User.countDocuments({ isActive: { $ne: false } }),
       Student.countDocuments({ 'academicInfo.status': 'active' }),
@@ -71,21 +63,21 @@ router.get('/stats', auth, async (req: AuthRequest, res) => {
     });
 
     // Recent file uploads
-    const recentFiles = await File.find({ isArchived: { $ne: true } })
+    const recentDocuments = await Document.find({ isArchived: { $ne: true } })
       .sort({ createdAt: -1 })
       .limit(2)
       .populate('uploadedBy', 'profile')
-      .select('originalName createdAt uploadedBy');
+      .select('title originalName createdAt uploadedBy');
 
-    recentFiles.forEach(file => {
+    recentDocuments.forEach(doc => {
       recentActivities.push({
-        _id: file._id,
-        type: 'file',
+        _id: doc._id,
+        type: 'document',
         action: 'uploaded',
-        description: `File "${file.originalName}" uploaded`,
-        timestamp: file.createdAt,
-        user: file.uploadedBy?.profile ? 
-          `${file.uploadedBy.profile.firstName} ${file.uploadedBy.profile.lastName}` : 
+        description: `Document "${doc.title}" uploaded`,
+        timestamp: doc.createdAt,
+        user: doc.uploadedBy?.profile ? 
+          `${doc.uploadedBy.profile.firstName} ${doc.uploadedBy.profile.lastName}` : 
           'Unknown User'
       });
     });
@@ -180,7 +172,7 @@ router.get('/stats', auth, async (req: AuthRequest, res) => {
       updatedAt: { $gte: new Date(currentYear, 0, 1) }
     });
 
-    const recentUploads = await File.countDocuments({
+    const recentUploads = await Document.countDocuments({
       createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
       isArchived: { $ne: true }
     });
@@ -214,6 +206,85 @@ router.get('/stats', auth, async (req: AuthRequest, res) => {
   } catch (error) {
     logger.error('Dashboard stats error:', error);
     res.status(500).json({ 
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    });
+  }
+});
+
+
+// Get student-specific dashboard statistics
+router.get('/student-stats', auth, async (req: AuthRequest, res) => {
+  try {
+    if (req.user?.role !== 'student') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const student = await Student.findOne({ userId: req.user._id });
+
+    if (!student) {
+      return res.status(404).json({ message: 'Student profile not found' });
+    }
+
+    // Calculate student-specific stats
+    const totalCourses = student.results.reduce((sum, result) => sum + result.courses.length, 0);
+    const latestCGPA = student.results.length > 0 ? student.results[student.results.length - 1].cgpa : 0;
+    const totalDocuments = await Document.countDocuments({ uploadedBy: req.user._id });
+
+    res.json({
+      success: true,
+      stats: {
+        currentCGPA: latestCGPA,
+        completedCourses: totalCourses,
+        currentSemester: student.academicInfo.currentSemester,
+        totalDocuments: totalDocuments,
+        academicStatus: student.academicInfo.status,
+        currentLevel: student.academicInfo.level,
+      },
+      recentSubmissions: [], // Placeholder for now, can be populated from Document model later
+    });
+  } catch (error) {
+    logger.error('Student dashboard stats error:', error);
+    res.status(500).json({
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    });
+  }
+});
+
+// Get staff-specific dashboard statistics
+router.get('/staff-stats', auth, async (req: AuthRequest, res) => {
+  try {
+    if (req.user?.role !== 'staff') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const staff = await Staff.findOne({ userId: req.user._id });
+
+    if (!staff) {
+      return res.status(404).json({ message: 'Staff profile not found' });
+    }
+
+    // Calculate staff-specific stats
+    const totalStudentsSupervised = staff.teachingLoad?.researchSupervision?.length || 0;
+    const totalCoursesTaught = staff.teachingLoad?.courses?.length || 0;
+    const totalDocuments = await Document.countDocuments({ uploadedBy: req.user._id });
+
+    res.json({
+      success: true,
+      stats: {
+        totalStudentsSupervised,
+        totalCoursesTaught,
+        totalDocuments,
+        employmentType: staff.employmentInfo.employmentType,
+        currentStatus: staff.employmentInfo.currentStatus,
+      },
+      recentActivities: [], // Placeholder for now
+      myClasses: staff.teachingLoad?.courses || [],
+    });
+  } catch (error) {
+    logger.error('Staff dashboard stats error:', error);
+    res.status(500).json({
       message: 'Server error',
       error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
     });

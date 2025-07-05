@@ -51,6 +51,7 @@ export interface Student {
     gpa: number;
     cgpa: number;
   }>;
+  documents: string[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

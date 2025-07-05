@@ -55,6 +55,60 @@ const getDefaultPermissions = (role: string) => {
   }
 };
 
+router.post('/register', [
+  body('username').notEmpty().withMessage('Username is required').trim(),
+  body('email').isEmail().withMessage('Please enter a valid email'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('role').isIn(['student', 'staff', 'admin', 'system-admin']).withMessage('Valid role is required'),
+  body('profile.firstName').notEmpty().withMessage('First name is required'),
+  body('profile.lastName').notEmpty().withMessage('Last name is required'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { username, email, password, role, profile } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User with this email or username already exists' });
+    }
+
+    const user = await User.create({
+      username,
+      email,
+      password,
+      role,
+      profile,
+      permissions: getDefaultPermissions(role) // Set default permissions based on role
+    });
+
+    const token = generateToken(user._id.toString());
+
+    res.status(201).json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        profile: user.profile,
+        permissions: user.permissions
+      }
+    });
+  } catch (error) {
+    logger.error('Registration error:', error);
+    res.status(500).json({
+      message: 'Server error during registration',
+      error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    });
+  }
+});
+
 // Login user
 router.post('/login', [
   body('email').isEmail().withMessage('Please enter a valid email'),

@@ -5,117 +5,7 @@ import { auth, authorize, AuthRequest } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Demo students data
-const getDemoStudents = () => [
-  {
-    _id: '1',
-    registrationNumber: 'UNI/2023/001',
-    firstName: 'John',
-    lastName: 'Doe',
-    middleName: 'Michael',
-    dateOfBirth: '2000-05-15',
-    gender: 'male',
-    email: 'john.doe@university.edu',
-    phone: '+1234567890',
-    address: {
-      street: '123 Main St',
-      city: 'University City',
-      state: 'State',
-      zipCode: '12345',
-      country: 'Country'
-    },
-    emergencyContact: {
-      name: 'Jane Doe',
-      relationship: 'Mother',
-      phone: '+1234567891'
-    },
-    academicInfo: {
-      faculty: 'Engineering',
-      department: 'Computer Science',
-      program: 'Bachelor of Science',
-      level: '300',
-      yearOfAdmission: 2023,
-      currentSemester: 2,
-      status: 'active'
-    },
-    guardian: {
-      name: 'Robert Doe',
-      relationship: 'Father',
-      phone: '+1234567892',
-      email: 'robert.doe@email.com',
-      address: '456 Guardian St, Guardian City'
-    },
-    results: [
-      {
-        semester: 1,
-        year: 2023,
-        courses: [
-          {
-            courseCode: 'CSC101',
-            courseName: 'Introduction to Computer Science',
-            creditUnits: 3,
-            grade: 'A',
-            gradePoint: 4.0
-          },
-          {
-            courseCode: 'MTH101',
-            courseName: 'Calculus I',
-            creditUnits: 3,
-            grade: 'B+',
-            gradePoint: 3.5
-          }
-        ],
-        gpa: 3.75,
-        cgpa: 3.75
-      }
-    ],
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    _id: '2',
-    registrationNumber: 'UNI/2023/002',
-    firstName: 'Sarah',
-    lastName: 'Johnson',
-    dateOfBirth: '2001-03-20',
-    gender: 'female',
-    email: 'sarah.johnson@university.edu',
-    phone: '+1234567893',
-    address: {
-      street: '789 College Ave',
-      city: 'University City',
-      state: 'State',
-      zipCode: '12345',
-      country: 'Country'
-    },
-    emergencyContact: {
-      name: 'Mary Johnson',
-      relationship: 'Mother',
-      phone: '+1234567894'
-    },
-    academicInfo: {
-      faculty: 'Medicine',
-      department: 'Medicine and Surgery',
-      program: 'Bachelor of Medicine',
-      level: '200',
-      yearOfAdmission: 2023,
-      currentSemester: 2,
-      status: 'active'
-    },
-    guardian: {
-      name: 'David Johnson',
-      relationship: 'Father',
-      phone: '+1234567895',
-      email: 'david.johnson@email.com',
-      address: '321 Guardian Ave, Guardian City'
-    },
-    results: [],
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
+
 
 // Get all students
 router.get('/', auth, async (req, res) => {
@@ -128,48 +18,7 @@ router.get('/', auth, async (req, res) => {
     const level = req.query.level as string;
     const status = req.query.status as string;
 
-    // If no MongoDB connection, return demo data
-    if (!process.env.MONGODB_URI) {
-      let students = getDemoStudents();
-      
-      // Apply filters
-      if (search) {
-        const searchLower = search.toLowerCase();
-        students = students.filter(student => 
-          student.firstName.toLowerCase().includes(searchLower) ||
-          student.lastName.toLowerCase().includes(searchLower) ||
-          student.registrationNumber.toLowerCase().includes(searchLower) ||
-          student.email.toLowerCase().includes(searchLower)
-        );
-      }
-      if (faculty) {
-        students = students.filter(s => s.academicInfo.faculty === faculty);
-      }
-      if (department) {
-        students = students.filter(s => s.academicInfo.department === department);
-      }
-      if (level) {
-        students = students.filter(s => s.academicInfo.level === level);
-      }
-      if (status) {
-        students = students.filter(s => s.academicInfo.status === status);
-      }
-
-      // Apply pagination
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      const paginatedStudents = students.slice(startIndex, endIndex);
-
-      return res.json({
-        success: true,
-        students: paginatedStudents,
-        pagination: {
-          page,
-          pages: Math.ceil(students.length / limit),
-          total: students.length
-        }
-      });
-    }
+    
 
     const query: any = { isActive: true };
     if (search) {
@@ -212,14 +61,7 @@ router.get('/registration/:regNumber', async (req, res) => {
   try {
     const { regNumber } = req.params;
 
-    // If no MongoDB connection, return demo data
-    if (!process.env.MONGODB_URI) {
-      const student = getDemoStudents().find(s => s.registrationNumber === regNumber);
-      if (!student) {
-        return res.status(404).json({ message: 'Student not found' });
-      }
-      return res.json({ success: true, student });
-    }
+    
 
     const student = await Student.findOne({ 
       registrationNumber: regNumber,
@@ -242,14 +84,7 @@ router.get('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // If no MongoDB connection, return demo data
-    if (!process.env.MONGODB_URI) {
-      const student = getDemoStudents().find(s => s._id === id);
-      if (!student) {
-        return res.status(404).json({ message: 'Student not found' });
-      }
-      return res.json({ success: true, student });
-    }
+    
 
     const student = await Student.findById(id);
     if (!student) {
@@ -279,22 +114,7 @@ router.post('/', auth, authorize('admin', 'staff'), [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // If no MongoDB connection, simulate creation
-    if (!process.env.MONGODB_URI) {
-      const newStudent = {
-        _id: Date.now().toString(),
-        ...req.body,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      return res.status(201).json({
-        success: true,
-        student: newStudent,
-        message: 'Student created successfully (demo mode)'
-      });
-    }
+    
 
     const student = await Student.create(req.body);
 
@@ -313,13 +133,7 @@ router.put('/:id', auth, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
 
-    // If no MongoDB connection, simulate update
-    if (!process.env.MONGODB_URI) {
-      return res.json({
-        success: true,
-        message: 'Student updated successfully (demo mode)'
-      });
-    }
+    
 
     const student = await Student.findByIdAndUpdate(
       id,
@@ -344,13 +158,7 @@ router.post('/:id/results', auth, authorize('admin', 'staff'), async (req: AuthR
     const { id } = req.params;
     const resultData = req.body;
 
-    // If no MongoDB connection, simulate adding result
-    if (!process.env.MONGODB_URI) {
-      return res.json({
-        success: true,
-        message: 'Result added successfully (demo mode)'
-      });
-    }
+    
 
     const student = await Student.findById(id);
     if (!student) {
@@ -372,13 +180,7 @@ router.delete('/:id', auth, authorize('admin'), async (req, res) => {
   try {
     const { id } = req.params;
 
-    // If no MongoDB connection, simulate deletion
-    if (!process.env.MONGODB_URI) {
-      return res.json({
-        success: true,
-        message: 'Student deleted successfully (demo mode)'
-      });
-    }
+    
 
     const student = await Student.findByIdAndUpdate(
       id,

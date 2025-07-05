@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, FileText, Users, GraduationCap, UserCheck, X, Clock } from 'lucide-react';
 import { useQuery } from 'react-query';
 import { useNavigate } from 'react-router-dom';
+import { apiClient } from '../../api/client';
 
 interface SearchResult {
   type: 'document' | 'student' | 'staff' | 'user';
@@ -28,14 +29,8 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
     async () => {
       if (!query.trim()) return { results: [] };
       
-      const response = await fetch(`/api/search/global?q=${encodeURIComponent(query)}&types=${selectedTypes.join(',')}&limit=20`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('Search failed');
-      return response.json();
+      const response = await apiClient.get(`/search/global?q=${encodeURIComponent(query)}&types=${selectedTypes.join(',')}&limit=20`);
+      return response.data;
     },
     {
       enabled: query.length > 2,
@@ -48,14 +43,8 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
     async () => {
       if (!query.trim() || query.length < 2) return { suggestions: [] };
       
-      const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}&type=document`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('Failed to get suggestions');
-      return response.json();
+      const response = await apiClient.get(`/search/suggestions?q=${encodeURIComponent(query)}&type=document`);
+      return response.data;
     },
     {
       enabled: query.length >= 2,
@@ -66,14 +55,8 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
   const { data: popularTerms } = useQuery(
     'popularSearchTerms',
     async () => {
-      const response = await fetch('/api/search/popular', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('Failed to get popular terms');
-      return response.json();
+      const response = await apiClient.get('/search/popular');
+      return response.data;
     },
     {
       staleTime: 300000 // 5 minutes

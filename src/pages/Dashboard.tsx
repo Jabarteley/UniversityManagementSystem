@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { Users, GraduationCap, UserCheck, FileText, TrendingUp, Clock, Activity, BookOpen, FolderOpen, Award, Calendar, Upload, Download, CheckCircle, PersonStanding as PendingActions } from 'lucide-react';
 import { dashboardAPI } from '../api/dashboard';
 import { usersAPI } from '../api/users';
+import { staffAPI } from '../api/staff';
+import { studentsAPI } from '../api/students';
 import StatsCard from '../components/Dashboard/StatsCard';
 import FacultyChart from '../components/Dashboard/FacultyChart';
 import StatusChart from '../components/Dashboard/StatusChart';
@@ -24,6 +26,29 @@ const Dashboard: React.FC = () => {
     }
   );
 
+  const { data: staffData, isLoading: staffLoading } = useQuery(
+    'staff',
+    () => staffAPI.getAll(),
+    {
+      enabled: user?.role === 'admin' || user?.role === 'system-admin',
+      onSuccess: (data) => console.log('Staff Data:', data),
+      onError: (error) => console.error('Staff Data Error:', error),
+    }
+  );
+
+  console.log('Staff Data (Dashboard):', staffData);
+  console.log('Staff Loading (Dashboard):', staffLoading);
+
+  const { data: studentsData, isLoading: studentsLoading } = useQuery(
+    'students',
+    () => studentsAPI.getAll(),
+    {
+      enabled: user?.role === 'admin' || user?.role === 'system-admin',
+      onSuccess: (data) => console.log('Students Data:', data),
+      onError: (error) => console.error('Students Data Error:', error),
+    }
+  );
+
   const { data: usersData, isLoading: usersLoading } = useQuery(
     'dashboardUsers',
     () => usersAPI.getAll({ limit: 100 }),
@@ -34,10 +59,30 @@ const Dashboard: React.FC = () => {
     }
   );
 
-  if (dashboardLoading) return <LoadingSpinner />;
+  const { data: studentDashboardData, isLoading: studentDashboardLoading, error: studentDashboardError } = useQuery(
+    'studentDashboardStats',
+    dashboardAPI.getStudentStats,
+    {
+      enabled: user?.role === 'student',
+      retry: 1,
+      refetchOnWindowFocus: false
+    }
+  );
+
+  const { data: staffDashboardData, isLoading: staffDashboardLoading, error: staffDashboardError } = useQuery(
+    'staffDashboardStats',
+    dashboardAPI.getStaffStats,
+    {
+      enabled: user?.role === 'staff',
+      retry: 1,
+      refetchOnWindowFocus: false
+    }
+  );
+
+  if (dashboardLoading || studentDashboardLoading || staffDashboardLoading) return <LoadingSpinner />;
   
-  if (dashboardError) {
-    console.error('Dashboard error:', dashboardError);
+  if (dashboardError || studentDashboardError || staffDashboardError) {
+    console.error('Dashboard error:', dashboardError || studentDashboardError || staffDashboardError);
     return (
       <div className="text-center py-12">
         <p className="text-red-500">Error loading dashboard data</p>
@@ -46,19 +91,23 @@ const Dashboard: React.FC = () => {
     );
   }
 
+  const studentStats = studentDashboardData?.stats || {};
+  const staffStats = staffDashboardData?.stats || {};
+  const staffMyClasses = staffDashboardData?.myClasses || [];
+  const staffRecentActivities = staffDashboardData?.recentActivities || [];
   const stats = dashboardData?.stats || {};
-  const recentActivities = dashboardData?.recentActivities || [];
-  const facultyStats = dashboardData?.facultyStats || [];
-  const studentStatusStats = dashboardData?.studentStatusStats || [];
-  const staffTypeStats = dashboardData?.staffTypeStats || [];
   const users = usersData?.users || [];
+  const facultyStats = stats.facultyStats || [];
+  const recentActivities = dashboardData?.recentActivities || [];
+  const studentStatusStats = stats.studentStatusStats || [];
+  const staffTypeStats = stats.staffTypeStats || [];
 
   // Student Dashboard
   if (user?.role === 'student') {
-    const studentStats = [
+    const studentDashboardCards = [
       {
         title: 'Current CGPA',
-        value: 3.75,
+        value: studentStats.currentCGPA?.toFixed(2) || 'N/A',
         icon: Award,
         color: 'bg-green-500',
         change: '+0.15',
@@ -66,7 +115,7 @@ const Dashboard: React.FC = () => {
       },
       {
         title: 'Completed Courses',
-        value: 24,
+        value: studentStats.completedCourses || 0,
         icon: BookOpen,
         color: 'bg-blue-500',
         change: '+3',
@@ -74,15 +123,15 @@ const Dashboard: React.FC = () => {
       },
       {
         title: 'Current Semester',
-        value: 6,
+        value: studentStats.currentSemester || 'N/A',
         icon: Calendar,
         color: 'bg-purple-500',
         change: '0',
         changeType: 'positive' as const,
       },
       {
-        title: 'Documents',
-        value: 12,
+        title: 'My Documents',
+        value: studentStats.totalDocuments || 0,
         icon: FolderOpen,
         color: 'bg-orange-500',
         change: '+2',
@@ -108,7 +157,7 @@ const Dashboard: React.FC = () => {
 
         {/* Student Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {studentStats.map((stat, index) => (
+          {studentDashboardCards.map((stat, index) => (
             <motion.div
               key={stat.title}
               initial={{ opacity: 0, y: 20 }}
@@ -170,20 +219,23 @@ const Dashboard: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Current Level</span>
-                <span className="font-medium text-gray-900">300 Level</span>
+                <span className="font-medium text-gray-900">{studentStats.currentLevel || 'N/A'} Level</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Current Semester</span>
-                <span className="font-medium text-gray-900">2nd Semester</span>
+                <span className="font-medium text-gray-900">{studentStats.currentSemester || 'N/A'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">CGPA</span>
-                <span className="font-bold text-green-600">3.75</span>
+                <span className="font-bold text-green-600">{studentStats.currentCGPA?.toFixed(2) || 'N/A'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Status</span>
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  Active
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  studentStats.academicStatus === 'active' ? 'bg-green-100 text-green-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {studentStats.academicStatus || 'N/A'}
                 </span>
               </div>
             </div>
@@ -202,25 +254,27 @@ const Dashboard: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900">Recent Document Submissions</h3>
           </div>
           <div className="space-y-3">
-            {[
-              { name: 'Course Registration Form', date: '2 days ago', status: 'Approved' },
-              { name: 'Internship Report', date: '1 week ago', status: 'Under Review' },
-              { name: 'Thesis Proposal', date: '2 weeks ago', status: 'Approved' }
-            ].map((doc, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">{doc.name}</p>
-                  <p className="text-sm text-gray-500">{doc.date}</p>
+            {studentDashboardData?.recentSubmissions && studentDashboardData.recentSubmissions.length > 0 ? (
+              studentDashboardData.recentSubmissions.map((doc: any, index: number) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{doc.name}</p>
+                    <p className="text-sm text-gray-500">{new Date(doc.date).toLocaleDateString()}</p>
+                  </div>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    doc.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                    doc.status === 'Under Review' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {doc.status}
+                  </span>
                 </div>
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  doc.status === 'Approved' ? 'bg-green-100 text-green-800' :
-                  doc.status === 'Under Review' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {doc.status}
-                </span>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No recent document submissions</p>
               </div>
-            ))}
+            )}
           </div>
         </motion.div>
       </div>
@@ -229,10 +283,10 @@ const Dashboard: React.FC = () => {
 
   // Staff Dashboard
   if (user?.role === 'staff') {
-    const staffStats = [
+    const staffDashboardCards = [
       {
         title: 'My Students',
-        value: 45,
+        value: staffStats.totalStudentsSupervised || 0,
         icon: GraduationCap,
         color: 'bg-blue-500',
         change: '+3',
@@ -240,26 +294,26 @@ const Dashboard: React.FC = () => {
       },
       {
         title: 'Classes This Semester',
-        value: 6,
+        value: staffStats.totalCoursesTaught || 0,
         icon: BookOpen,
         color: 'bg-green-500',
         change: '+1',
         changeType: 'positive' as const,
       },
       {
-        title: 'Pending Grades',
-        value: 12,
-        icon: PendingActions,
-        color: 'bg-orange-500',
-        change: '-5',
-        changeType: 'positive' as const,
-      },
-      {
-        title: 'Course Materials',
-        value: 28,
+        title: 'My Documents',
+        value: staffStats.totalDocuments || 0,
         icon: FolderOpen,
         color: 'bg-purple-500',
         change: '+4',
+        changeType: 'positive' as const,
+      },
+      {
+        title: 'Employment Type',
+        value: staffStats.employmentType || 'N/A',
+        icon: Award,
+        color: 'bg-orange-500',
+        change: '0',
         changeType: 'positive' as const,
       },
     ];
@@ -282,7 +336,7 @@ const Dashboard: React.FC = () => {
 
         {/* Staff Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {staffStats.map((stat, index) => (
+          {staffDashboardCards.map((stat, index) => (
             <motion.div
               key={stat.title}
               initial={{ opacity: 0, y: 20 }}
@@ -342,16 +396,42 @@ const Dashboard: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900">Recent Activities</h3>
             </div>
             <div className="space-y-3">
-              {recentActivities.slice(0, 4).map((activity: any, index: number) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-900">{activity.description}</p>
-                  <p className="text-xs text-gray-500">
-                    {new Date(activity.timestamp).toLocaleDateString()}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
+              {staffRecentActivities.length > 0 ? (
+              <>
+                {staffRecentActivities.slice(0, 4).map((activity: any, index: number) => (
+                  <motion.div
+                    key={activity._id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {activity.description}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        By {activity.user} • {new Date(activity.timestamp).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      activity.type === 'student' ? 'bg-blue-100 text-blue-800' :
+                      activity.type === 'staff' ? 'bg-green-100 text-green-800' :
+                      activity.type === 'document' ? 'bg-purple-100 text-purple-800' :
+                      'bg-orange-100 text-orange-800'
+                    }`}>
+                      {activity.type}
+                    </span>
+                  </motion.div>
+                ))}
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No recent activities</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
         </div>
 
         {/* My Classes */}
@@ -366,20 +446,20 @@ const Dashboard: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900">My Classes This Semester</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { code: 'CSC301', name: 'Data Structures', students: 45, level: '300' },
-              { code: 'CSC401', name: 'Software Engineering', students: 38, level: '400' },
-              { code: 'CSC501', name: 'Advanced Algorithms', students: 22, level: '500' }
-            ].map((course, index) => (
+            {staffMyClasses.length > 0 ? staffMyClasses.map((course: any, index: number) => (
               <div key={index} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                <h4 className="font-semibold text-gray-900">{course.code}</h4>
-                <p className="text-sm text-gray-600 mb-2">{course.name}</p>
+                <h4 className="font-semibold text-gray-900">{course.courseCode}</h4>
+                <p className="text-sm text-gray-600 mb-2">{course.courseName}</p>
                 <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>{course.students} students</span>
+                  <span>{course.studentCount} students</span>
                   <span>{course.level} Level</span>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center py-8 col-span-full">
+                <p className="text-gray-500">No classes assigned this semester</p>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
@@ -390,7 +470,7 @@ const Dashboard: React.FC = () => {
   const adminStats = [
     {
       title: 'Total Students',
-      value: stats.totalStudents || 0,
+      value: studentsData?.students?.length || 0,
       icon: GraduationCap,
       color: 'bg-blue-500',
       change: '+12%',
@@ -398,14 +478,14 @@ const Dashboard: React.FC = () => {
     },
     {
       title: 'Total Staff',
-      value: stats.totalStaff || 0,
+      value: staffData?.staff?.length || 0,
       icon: UserCheck,
       color: 'bg-green-500',
       change: '+8%',
       changeType: 'positive' as const,
     },
     {
-      title: 'Total Files',
+      title: 'Total Documents',
       value: stats.totalFiles || 0,
       icon: FolderOpen,
       color: 'bg-orange-500',
@@ -486,11 +566,11 @@ const Dashboard: React.FC = () => {
           </button>
           
           <button 
-            onClick={() => navigate('/files')}
+            onClick={() => navigate('/documents')}
             className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-colors"
           >
             <FolderOpen className="h-5 w-5 text-gray-400 mr-2" />
-            <span className="text-sm font-medium text-gray-600">File System</span>
+            <span className="text-sm font-medium text-gray-600">Document System</span>
           </button>
         </div>
       </motion.div>
@@ -569,11 +649,11 @@ const Dashboard: React.FC = () => {
         >
           <div className="flex items-center mb-4">
             <FolderOpen className="h-5 w-5 text-orange-600 mr-2" />
-            <h3 className="text-lg font-semibold text-gray-900">File System</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Document System</h3>
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Total Files</span>
+              <span className="text-sm text-gray-600">Total Documents</span>
               <span className="font-medium text-gray-900">{stats.totalFiles || 0}</span>
             </div>
             <div className="flex items-center justify-between">
@@ -588,7 +668,7 @@ const Dashboard: React.FC = () => {
               onClick={() => navigate('/files')}
               className="w-full mt-3 px-3 py-2 text-sm font-medium text-orange-600 border border-orange-600 rounded-lg hover:bg-orange-50 transition-colors"
             >
-              Manage Files
+              Manage Documents
             </button>
           </div>
         </motion.div>
@@ -620,32 +700,36 @@ const Dashboard: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900">Recent Activities</h3>
           </div>
           <div className="space-y-3">
-            {recentActivities.length > 0 ? recentActivities.slice(0, 6).map((activity: any, index: number) => (
-              <motion.div
-                key={activity._id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {activity.description}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    By {activity.user} • {new Date(activity.timestamp).toLocaleDateString()}
-                  </p>
-                </div>
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  activity.type === 'student' ? 'bg-blue-100 text-blue-800' :
-                  activity.type === 'staff' ? 'bg-green-100 text-green-800' :
-                  activity.type === 'file' ? 'bg-purple-100 text-purple-800' :
-                  'bg-orange-100 text-orange-800'
-                }`}>
-                  {activity.type}
-                </span>
-              </motion.div>
-            )) : (
+            {recentActivities.length > 0 ? (
+              <>
+                {recentActivities.slice(0, 6).map((activity: any, index: number) => (
+                  <motion.div
+                    key={activity._id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {activity.description}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        By {activity.user} • {new Date(activity.timestamp).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      activity.type === 'student' ? 'bg-blue-100 text-blue-800' :
+                      activity.type === 'staff' ? 'bg-green-100 text-green-800' :
+                      activity.type === 'document' ? 'bg-purple-100 text-purple-800' :
+                      'bg-orange-100 text-orange-800'
+                    }`}>
+                      {activity.type}
+                    </span>
+                  </motion.div>
+                ))}
+              </>
+            ) : (
               <div className="text-center py-8">
                 <p className="text-gray-500">No recent activities</p>
               </div>
