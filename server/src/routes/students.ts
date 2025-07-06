@@ -3,9 +3,9 @@ import { body, validationResult } from 'express-validator';
 import Student from '../models/Student.js';
 import { auth, authorize, AuthRequest } from '../middleware/auth.js';
 
+import User from '../models/User.js';
+
 const router = express.Router();
-
-
 
 // Get all students
 router.get('/', auth, async (req, res) => {
@@ -18,9 +18,7 @@ router.get('/', auth, async (req, res) => {
     const level = req.query.level as string;
     const status = req.query.status as string;
 
-    
-
-    const query: any = { isActive: true };
+    const query: any = { isActive: { $ne: false } };
     if (search) {
       query.$or = [
         { firstName: { $regex: search, $options: 'i' } },
@@ -34,12 +32,16 @@ router.get('/', auth, async (req, res) => {
     if (level) query['academicInfo.level'] = level;
     if (status) query['academicInfo.status'] = status;
 
+    console.log('Student query:', query);
     const students = await Student.find(query)
+      .populate('userId', 'profile')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
     const total = await Student.countDocuments(query);
+    console.log('Found students:', students);
+    console.log('Total students (countDocuments):', total);
 
     res.json({
       success: true,
@@ -60,8 +62,6 @@ router.get('/', auth, async (req, res) => {
 router.get('/registration/:regNumber', async (req, res) => {
   try {
     const { regNumber } = req.params;
-
-    
 
     const student = await Student.findOne({ 
       registrationNumber: regNumber,
@@ -84,8 +84,6 @@ router.get('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
 
-    
-
     const student = await Student.findById(id);
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
@@ -101,8 +99,8 @@ router.get('/:id', auth, async (req, res) => {
 // Create student
 router.post('/', auth, authorize('admin', 'staff'), [
   body('registrationNumber').notEmpty().withMessage('Registration number is required'),
-  body('firstName').notEmpty().withMessage('First name is required'),
-  body('lastName').notEmpty().withMessage('Last name is required'),
+  body('profile.firstName').notEmpty().withMessage('First name is required'),
+  body('profile.lastName').notEmpty().withMessage('Last name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
   body('dateOfBirth').isISO8601().withMessage('Valid date of birth is required'),
   body('academicInfo.faculty').notEmpty().withMessage('Faculty is required'),
@@ -114,9 +112,18 @@ router.post('/', auth, authorize('admin', 'staff'), [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    
+    const { email, password, profile, ...studentData } = req.body;
 
-    const student = await Student.create(req.body);
+    const user = new User({
+      email,
+      password,
+      role: 'student',
+      profile
+    });
+
+    await user.save();
+
+    const student = await Student.create({ ...studentData, userId: user._id });
 
     res.status(201).json({
       success: true,

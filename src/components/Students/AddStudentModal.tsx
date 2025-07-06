@@ -25,7 +25,16 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (name.includes('.')) {
+    if (name.startsWith('profile.')) {
+      const profileField = name.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        profile: {
+          ...prev.profile,
+          [profileField]: value
+        }
+      }));
+    } else if (name.includes('.')) {
       const [parent, child] = name.split('.');
       if (parent === 'academicInfo' && (child === 'level' || child === 'yearOfAdmission' || child === 'currentSemester')) {
         setFormData(prev => ({
@@ -71,8 +80,8 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
         <h3 className="text-lg font-semibold mb-4">Add New Student</h3>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="text" id="firstName" name="firstName" placeholder="First Name" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="given-name" />
-            <input type="text" id="lastName" name="lastName" placeholder="Last Name" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="family-name" />
+            <input type="text" id="profile.firstName" name="profile.firstName" placeholder="First Name" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="given-name" />
+            <input type="text" id="profile.lastName" name="profile.lastName" placeholder="Last Name" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="family-name" />
             <input type="text" id="registrationNumber" name="registrationNumber" placeholder="Registration Number" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
             <input type="date" id="dateOfBirth" name="dateOfBirth" placeholder="Date of Birth" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="bday" />
             <select id="gender" name="gender" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="sex">
@@ -81,6 +90,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
               <option value="female">Female</option>
             </select>
             <input type="email" id="email" name="email" placeholder="Email" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="email" />
+            <input type="password" id="password" name="password" placeholder="Password" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="new-password" />
             <input type="text" id="phone" name="phone" placeholder="Phone" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="tel" />
             <input type="text" id="address.street" name="address.street" placeholder="Street" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" autoComplete="address-line1" />
             <input type="text" id="address.city" name="address.city" placeholder="City" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" autoComplete="address-level2" />
@@ -108,7 +118,6 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
             <input type="text" id="guardian.relationship" name="guardian.relationship" placeholder="Guardian Relationship" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
             <input type="text" id="guardian.phone" name="guardian.phone" placeholder="Guardian Phone" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
             <input type="text" id="guardian.address" name="guardian.address" placeholder="Guardian Address" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
-            <input type="text" id="userId" name="userId" placeholder="User ID" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
           </div>
           <div className="flex space-x-3 mt-4">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">

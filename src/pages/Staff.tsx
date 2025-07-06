@@ -5,6 +5,7 @@ import { Plus, Filter, Search, Mail, Phone, Building, Calendar, UserCheck, Award
 import { staffAPI } from '../api/staff';
 import { format } from 'date-fns';
 import AddStaffModal from '../components/Staff/AddStaffModal';
+import { filtersAPI } from '../api/filters';
 
 const Staff: React.FC = () => {
   const [filters, setFilters] = useState({
@@ -24,6 +25,9 @@ const Staff: React.FC = () => {
       keepPreviousData: true
     }
   );
+
+  const { data: departments } = useQuery('departments', filtersAPI.getDepartments);
+  const { data: employmentTypes } = useQuery('employmentTypes', filtersAPI.getEmploymentTypes);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -200,11 +204,9 @@ const Staff: React.FC = () => {
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           >
             <option value="">All Departments</option>
-            <option value="Computer Science">Computer Science</option>
-            <option value="Registry">Registry</option>
-            <option value="Finance">Finance</option>
-            <option value="Human Resources">Human Resources</option>
-            <option value="Library">Library</option>
+            {departments?.map((department: string) => (
+              <option key={department} value={department}>{department}</option>
+            ))}
           </select>
 
           <select 
@@ -213,9 +215,9 @@ const Staff: React.FC = () => {
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           >
             <option value="">All Types</option>
-            <option value="academic">Academic</option>
-            <option value="administrative">Administrative</option>
-            <option value="support">Support</option>
+            {employmentTypes?.map((type: string) => (
+              <option key={type} value={type}>{type}</option>
+            ))}
           </select>
 
           <select 
@@ -260,12 +262,12 @@ const Staff: React.FC = () => {
                 <div className="flex items-center">
                   <div className="h-12 w-12 bg-green-600 rounded-full flex items-center justify-center mr-4">
                     <span className="text-lg font-bold text-white">
-                      {member.firstName.charAt(0)}{member.lastName.charAt(0)}
+                      {member.userId?.profile?.firstName?.charAt(0)}{member.userId?.profile?.lastName?.charAt(0)}
                     </span>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">
-                      {member.firstName} {member.lastName}
+                      {member.userId?.profile?.firstName} {member.userId?.profile?.lastName}
                     </h3>
                     <p className="text-sm text-gray-500">{member.staffId}</p>
                   </div>

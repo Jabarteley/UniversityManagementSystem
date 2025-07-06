@@ -14,53 +14,27 @@ import {
   Download,
   Upload
 } from 'lucide-react';
+import { useQuery } from 'react-query';
+import { documentsAPI } from '../api/documents';
+import LoadingSpinner from '../components/UI/LoadingSpinner';
 
 const Records: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const records = [
+  const { data, isLoading, error } = useQuery(
+    ['documents', { searchTerm, activeTab }],
+    () => documentsAPI.getAll({ 
+      search: searchTerm, 
+      category: activeTab === 'all' ? undefined : activeTab as any 
+    }),
     {
-      id: 1,
-      title: 'Student Academic Records - Computer Science 2024',
-      type: 'academic',
-      category: 'Student Records',
-      lastModified: '2024-01-15',
-      status: 'active',
-      size: '2.4 MB',
-      owner: 'Dr. Alice Smith'
-    },
-    {
-      id: 2,
-      title: 'Staff Employment Records - Q1 2024',
-      type: 'administrative',
-      category: 'Staff Records',
-      lastModified: '2024-01-14',
-      status: 'active',
-      size: '1.8 MB',
-      owner: 'John Wilson'
-    },
-    {
-      id: 3,
-      title: 'Faculty Meeting Minutes - January 2024',
-      type: 'administrative',
-      category: 'Meeting Records',
-      lastModified: '2024-01-13',
-      status: 'archived',
-      size: '856 KB',
-      owner: 'Admin User'
-    },
-    {
-      id: 4,
-      title: 'Student Graduation Records - 2023',
-      type: 'academic',
-      category: 'Student Records',
-      lastModified: '2024-01-12',
-      status: 'archived',
-      size: '3.2 MB',
-      owner: 'Registry Office'
+      keepPreviousData: true,
     }
-  ];
+  );
+
+  const records = data?.documents || [];
+  const totalRecords = data?.pagination?.total || 0;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -75,8 +49,8 @@ const Records: React.FC = () => {
     }
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
+  const getTypeIcon = (category: string) => {
+    switch (category) {
       case 'academic':
         return BookOpen;
       case 'administrative':
@@ -86,12 +60,11 @@ const Records: React.FC = () => {
     }
   };
 
-  const filteredRecords = records.filter(record => {
-    const matchesSearch = record.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         record.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTab = activeTab === 'all' || record.type === activeTab;
-    return matchesSearch && matchesTab;
-  });
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <div className="text-center py-12 text-red-500">Error loading records.</div>;
+
+  const academicRecordsCount = records.filter(r => r.category === 'academic').length;
+  const administrativeRecordsCount = records.filter(r => r.category === 'administrative').length;
 
   return (
     <div className="space-y-6">
@@ -120,7 +93,7 @@ const Records: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Records</p>
-              <p className="text-2xl font-bold text-gray-900">1,247</p>
+              <p className="text-2xl font-bold text-gray-900">{totalRecords}</p>
             </div>
             <div className="bg-blue-500 rounded-lg p-3">
               <FileText className="h-6 w-6 text-white" />
@@ -132,7 +105,7 @@ const Records: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Active Records</p>
-              <p className="text-2xl font-bold text-gray-900">1,089</p>
+              <p className="text-2xl font-bold text-gray-900">{records.filter(r => r.status === 'active').length}</p>
             </div>
             <div className="bg-green-500 rounded-lg p-3">
               <Eye className="h-6 w-6 text-white" />
@@ -144,7 +117,7 @@ const Records: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Archived</p>
-              <p className="text-2xl font-bold text-gray-900">158</p>
+              <p className="text-2xl font-bold text-gray-900">{records.filter(r => r.status === 'archived').length}</p>
             </div>
             <div className="bg-gray-500 rounded-lg p-3">
               <Archive className="h-6 w-6 text-white" />
@@ -156,7 +129,7 @@ const Records: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Recent Updates</p>
-              <p className="text-2xl font-bold text-gray-900">23</p>
+              <p className="text-2xl font-bold text-gray-900">{records.filter(r => new Date(r.updatedAt).toDateString() === new Date().toDateString()).length}</p>
             </div>
             <div className="bg-orange-500 rounded-lg p-3">
               <Edit className="h-6 w-6 text-white" />
@@ -202,11 +175,11 @@ const Records: React.FC = () => {
 
         {/* Tabs */}
         <div className="mt-4 border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+          <nav className=" -mb-px flex space-x-8">
             {[
-              { id: 'all', name: 'All Records', count: records.length },
-              { id: 'academic', name: 'Academic', count: records.filter(r => r.type === 'academic').length },
-              { id: 'administrative', name: 'Administrative', count: records.filter(r => r.type === 'administrative').length }
+              { id: 'all', name: 'All Records', count: totalRecords },
+              { id: 'academic', name: 'Academic', count: academicRecordsCount },
+              { id: 'administrative', name: 'Administrative', count: administrativeRecordsCount }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -236,64 +209,70 @@ const Records: React.FC = () => {
         </div>
         
         <div className="divide-y divide-gray-200">
-          {filteredRecords.map((record, index) => {
-            const TypeIcon = getTypeIcon(record.type);
-            return (
-              <motion.div
-                key={record.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="p-6 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="bg-blue-100 rounded-lg p-2">
-                      <TypeIcon className="h-5 w-5 text-blue-600" />
+          {records.length > 0 ? (
+            records.map((record, index) => {
+              const TypeIcon = getTypeIcon(record.category);
+              return (
+                <motion.div
+                  key={record._id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="p-6 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-blue-100 rounded-lg p-2">
+                        <TypeIcon className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900">
+                          {record.title}
+                        </h4>
+                        <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
+                          <span>{record.category}</span>
+                          <span>•</span>
+                          <span>{(record.fileSize / (1024 * 1024)).toFixed(2)} MB</span>
+                          <span>•</span>
+                          <span>Modified {new Date(record.updatedAt).toLocaleDateString()}</span>
+                          <span>•</span>
+                          <span>By {record.uploadedBy?.profile?.firstName} {record.uploadedBy?.profile?.lastName}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">
-                        {record.title}
-                      </h4>
-                      <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
-                        <span>{record.category}</span>
-                        <span>•</span>
-                        <span>{record.size}</span>
-                        <span>•</span>
-                        <span>Modified {record.lastModified}</span>
-                        <span>•</span>
-                        <span>By {record.owner}</span>
+                    
+                    <div className="flex items-center space-x-3">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
+                        {record.status}
+                      </span>
+                      
+                      <div className="flex items-center space-x-1">
+                        <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button className="p-2 text-gray-400 hover:text-green-600 transition-colors">
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button className="p-2 text-gray-400 hover:text-purple-600 transition-colors">
+                          <Send className="h-4 w-4" />
+                        </button>
+                        <button className="p-2 text-gray-400 hover:text-orange-600 transition-colors">
+                          <Download className="h-4 w-4" />
+                        </button>
+                        <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                          <Archive className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
-                      {record.status}
-                    </span>
-                    
-                    <div className="flex items-center space-x-1">
-                      <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button className="p-2 text-gray-400 hover:text-green-600 transition-colors">
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button className="p-2 text-gray-400 hover:text-purple-600 transition-colors">
-                        <Send className="h-4 w-4" />
-                      </button>
-                      <button className="p-2 text-gray-400 hover:text-orange-600 transition-colors">
-                        <Download className="h-4 w-4" />
-                      </button>
-                      <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                        <Archive className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
+                </motion.div>
+              );
+            })
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No records found.</p>
+            </div>
+          )}
         </div>
       </motion.div>
 

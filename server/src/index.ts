@@ -20,6 +20,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import usersRoutes from './routes/users.js';
 import searchRoutes from './routes/search.js';
 import backupRoutes from './routes/backup.js';
+import filterRoutes from './routes/filters.js';
 
 // Import services
 import DocumentProcessingService from './services/documentProcessing.js';
@@ -129,6 +130,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/backup', backupRoutes);
+app.use('/api/filters', filterRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -168,7 +170,8 @@ app.get('/', (req, res) => {
       dashboard: '/api/dashboard',
       users: '/api/users',
       search: '/api/search',
-      backup: '/api/backup'
+      backup: '/api/backup',
+      filters: '/api/filters'
     }
   });
 });
@@ -190,7 +193,8 @@ app.use('*', (req, res) => {
       '/api/dashboard',
       '/api/users',
       '/api/search',
-      '/api/backup'
+      '/api/backup',
+      '/api/filters'
     ]
   });
 });

@@ -231,6 +231,11 @@ router.get('/student-stats', auth, async (req: AuthRequest, res) => {
     const latestCGPA = student.results.length > 0 ? student.results[student.results.length - 1].cgpa : 0;
     const totalDocuments = await Document.countDocuments({ uploadedBy: req.user._id });
 
+    const recentSubmissions = await Document.find({ uploadedBy: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('originalName createdAt status');
+
     res.json({
       success: true,
       stats: {
@@ -241,7 +246,11 @@ router.get('/student-stats', auth, async (req: AuthRequest, res) => {
         academicStatus: student.academicInfo.status,
         currentLevel: student.academicInfo.level,
       },
-      recentSubmissions: [], // Placeholder for now, can be populated from Document model later
+      recentSubmissions: recentSubmissions.map(doc => ({
+        name: doc.originalName,
+        date: doc.createdAt,
+        status: doc.status || 'Pending'
+      })),
     });
   } catch (error) {
     logger.error('Student dashboard stats error:', error);
@@ -270,6 +279,25 @@ router.get('/staff-stats', auth, async (req: AuthRequest, res) => {
     const totalCoursesTaught = staff.teachingLoad?.courses?.length || 0;
     const totalDocuments = await Document.countDocuments({ uploadedBy: req.user._id });
 
+    const supervisedStudentIds = await Student.find({
+      _id: { $in: staff.teachingLoad?.researchSupervision || [] }
+    }).select('userId');
+
+    const supervisedUserIds = supervisedStudentIds.map(s => s.userId);
+
+    const recentStudentDocs = await Document.find({ uploadedBy: { $in: supervisedUserIds } })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate('uploadedBy', 'profile');
+
+    const recentActivities = recentStudentDocs.map(doc => ({
+      _id: doc._id,
+      type: 'document',
+      description: `Document "${doc.originalName}" submitted by a student.`,
+      timestamp: doc.createdAt,
+      user: doc.uploadedBy?.profile ? `${doc.uploadedBy.profile.firstName} ${doc.uploadedBy.profile.lastName}` : 'A student'
+    }));
+
     res.json({
       success: true,
       stats: {
@@ -279,7 +307,7 @@ router.get('/staff-stats', auth, async (req: AuthRequest, res) => {
         employmentType: staff.employmentInfo.employmentType,
         currentStatus: staff.employmentInfo.currentStatus,
       },
-      recentActivities: [], // Placeholder for now
+      recentActivities,
       myClasses: staff.teachingLoad?.courses || [],
     });
   } catch (error) {

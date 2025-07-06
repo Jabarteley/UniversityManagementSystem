@@ -3,9 +3,9 @@ import { body, validationResult } from 'express-validator';
 import Staff from '../models/Staff.js';
 import { auth, authorize, AuthRequest } from '../middleware/auth.js';
 
+import User from '../models/User.js';
+
 const router = express.Router();
-
-
 
 // Get all staff
 router.get('/', auth, async (req, res) => {
@@ -17,9 +17,7 @@ router.get('/', auth, async (req, res) => {
     const employmentType = req.query.employmentType as string;
     const status = req.query.status as string;
 
-    
-
-    const query: any = { isActive: true };
+    const query: any = { isActive: { $ne: false } };
     if (search) {
       query.$or = [
         { firstName: { $regex: search, $options: 'i' } },
@@ -32,12 +30,16 @@ router.get('/', auth, async (req, res) => {
     if (employmentType) query['employmentInfo.employmentType'] = employmentType;
     if (status) query['employmentInfo.currentStatus'] = status;
 
+    console.log('Staff query:', query);
     const staff = await Staff.find(query)
+      .populate('userId', 'profile')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
     const total = await Staff.countDocuments(query);
+    console.log('Found staff:', staff);
+    console.log('Total staff (countDocuments):', total);
 
     res.json({
       success: true,
@@ -59,8 +61,6 @@ router.get('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
 
-    
-
     const staff = await Staff.findById(id);
     if (!staff) {
       return res.status(404).json({ message: 'Staff member not found' });
@@ -76,8 +76,8 @@ router.get('/:id', auth, async (req, res) => {
 // Create staff member
 router.post('/', auth, authorize('admin'), [
   body('staffId').notEmpty().withMessage('Staff ID is required'),
-  body('firstName').notEmpty().withMessage('First name is required'),
-  body('lastName').notEmpty().withMessage('Last name is required'),
+  body('profile.firstName').notEmpty().withMessage('First name is required'),
+  body('profile.lastName').notEmpty().withMessage('Last name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
   body('employmentInfo.department').notEmpty().withMessage('Department is required'),
   body('employmentInfo.position').notEmpty().withMessage('Position is required')
@@ -88,9 +88,18 @@ router.post('/', auth, authorize('admin'), [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    
+    const { email, password, profile, ...staffData } = req.body;
 
-    const staff = await Staff.create(req.body);
+    const user = new User({
+      email,
+      password,
+      role: 'staff',
+      profile
+    });
+
+    await user.save();
+
+    const staff = await Staff.create({ ...staffData, userId: user._id });
 
     res.status(201).json({
       success: true,

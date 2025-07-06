@@ -6,6 +6,8 @@ import { Plus, Filter, Search, Mail, Phone, GraduationCap, Calendar, User, BookO
 import { studentsAPI } from '../api/students';
 import { format } from 'date-fns';
 
+import { filtersAPI } from '../api/filters';
+
 const Students: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [filters, setFilters] = useState({
@@ -23,6 +25,10 @@ const Students: React.FC = () => {
       keepPreviousData: true
     }
   );
+
+  const { data: faculties } = useQuery('faculties', filtersAPI.getFaculties);
+  const { data: departments } = useQuery('departments', filtersAPI.getDepartments);
+  const { data: levels } = useQuery('levels', filtersAPI.getLevels);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -122,11 +128,9 @@ const Students: React.FC = () => {
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           >
             <option value="">All Faculties</option>
-            <option value="Engineering">Engineering</option>
-            <option value="Medicine">Medicine</option>
-            <option value="Arts">Arts</option>
-            <option value="Science">Science</option>
-            <option value="Law">Law</option>
+            {faculties?.map((faculty: string) => (
+              <option key={faculty} value={faculty}>{faculty}</option>
+            ))}
           </select>
 
           <select 
@@ -135,10 +139,9 @@ const Students: React.FC = () => {
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           >
             <option value="">All Departments</option>
-            <option value="Computer Science">Computer Science</option>
-            <option value="Medicine and Surgery">Medicine and Surgery</option>
-            <option value="Electrical Engineering">Electrical Engineering</option>
-            <option value="English Literature">English Literature</option>
+            {departments?.map((department: string) => (
+              <option key={department} value={department}>{department}</option>
+            ))}
           </select>
 
           <select 
@@ -147,11 +150,9 @@ const Students: React.FC = () => {
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           >
             <option value="">All Levels</option>
-            <option value="100">100 Level</option>
-            <option value="200">200 Level</option>
-            <option value="300">300 Level</option>
-            <option value="400">400 Level</option>
-            <option value="500">500 Level</option>
+            {levels?.map((level: string) => (
+              <option key={level} value={level}>{level} Level</option>
+            ))}
           </select>
 
           <select 
@@ -196,12 +197,12 @@ const Students: React.FC = () => {
                 <div className="flex items-center">
                   <div className="h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center mr-4">
                     <span className="text-lg font-bold text-white">
-                      {student.firstName.charAt(0)}{student.lastName.charAt(0)}
+                      {student.userId?.profile?.firstName?.charAt(0)}{student.userId?.profile?.lastName?.charAt(0)}
                     </span>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">
-                      {student.firstName} {student.lastName}
+                      {student.userId?.profile?.firstName} {student.userId?.profile?.lastName}
                     </h3>
                     <p className="text-sm text-gray-500">{student.registrationNumber}</p>
                   </div>
@@ -258,7 +259,7 @@ const Students: React.FC = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500">Latest CGPA</span>
                     <span className="font-bold text-blue-600">
-                      {student.results[student.results.length - 1].cgpa.toFixed(2)}
+                      {student.results?.[student.results.length - 1]?.cgpa?.toFixed(2) ?? 'N/A'}
                     </span>
                   </div>
                 </div>

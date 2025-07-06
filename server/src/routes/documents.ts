@@ -105,7 +105,7 @@ router.get('/', auth, async (req: AuthRequest, res) => {
 });
 
 // Upload document
-router.post('/upload', auth, uploadAny.single('file'), [
+router.post('/upload', auth, [
   body('title').notEmpty().withMessage('Document title is required'),
   body('category').isIn(['academic', 'administrative', 'personal', 'financial', 'legal', 'medical', 'research']).withMessage('Valid category is required'),
   body('accessLevel').isIn(['public', 'restricted', 'confidential', 'classified']).withMessage('Valid access level is required')
