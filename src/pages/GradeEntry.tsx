@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
-import { Award, Save, Search, Filter, BookOpen, Users } from 'lucide-react';
+import { Award, Save, BookOpen, Users } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { studentsAPI } from '../api/students';
+import { dashboardAPI } from '../api/dashboard';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 
 const GradeEntry: React.FC = () => {
@@ -12,52 +13,47 @@ const GradeEntry: React.FC = () => {
   const [selectedAssignment, setSelectedAssignment] = useState('midterm');
   const [grades, setGrades] = useState<{ [key: string]: number }>({});
 
-  // Fetch staff dashboard data to get classes
-  const { data: staffData, isLoading: staffLoading } = useQuery(
-    'staffDashboardStats',
-    () => fetch('/api/dashboard/staff-stats', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    }).then(res => res.json()),
+  const { data: staffData = {}, isLoading: staffLoading } = useQuery(
+    ['staffDashboardStats'],
+    dashboardAPI.getStaffStats,
     {
       enabled: user?.role === 'staff',
       retry: 1,
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
     }
   );
 
-  const { data: studentsData, isLoading: studentsLoading } = useQuery(
+  const classes = staffData?.myClasses || [];
+
+  const { data: studentsData = {}, isLoading: studentsLoading } = useQuery(
     ['classStudents', selectedClass],
     () => studentsAPI.getByClass(selectedClass),
     {
       enabled: !!selectedClass,
       retry: 1,
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
     }
   );
 
-  if (staffLoading) return <LoadingSpinner />;
-
-  const classes = staffData?.myClasses || [];
   const students = studentsData?.students || [];
 
-  // Set default class if not selected
-  React.useEffect(() => {
+  useEffect(() => {
     if (classes.length > 0 && !selectedClass) {
       setSelectedClass(classes[0].courseCode);
     }
   }, [classes, selectedClass]);
 
+  if (staffLoading) return <LoadingSpinner />;
+
   const assignments = [
     { id: 'assignment1', name: 'Assignment 1', type: 'Assignment', maxScore: 20 },
     { id: 'assignment2', name: 'Assignment 2', type: 'Assignment', maxScore: 20 },
     { id: 'midterm', name: 'Midterm Exam', type: 'Exam', maxScore: 30 },
-    { id: 'final', name: 'Final Exam', type: 'Exam', maxScore: 30 }
+    { id: 'final', name: 'Final Exam', type: 'Exam', maxScore: 30 },
   ];
 
   const handleGradeChange = (studentId: string, grade: number) => {
-    setGrades(prev => ({ ...prev, [studentId]: grade }));
+    setGrades((prev) => ({ ...prev, [studentId]: grade }));
   };
 
   const getLetterGrade = (score: number) => {
@@ -92,13 +88,11 @@ const GradeEntry: React.FC = () => {
           transition={{ duration: 0.6 }}
         >
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Grade Entry</h1>
-          <p className="text-gray-600">
-            Enter and manage student grades for your classes
-          </p>
+          <p className="text-gray-600">Enter and manage student grades for your classes</p>
         </motion.div>
       </div>
 
-      {/* Class and Assignment Selection */}
+      {/* Class & Assignment Selection */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -108,10 +102,10 @@ const GradeEntry: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
-            <select 
+            <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="">Select a class</option>
               {classes.map((cls: any) => (
@@ -121,15 +115,15 @@ const GradeEntry: React.FC = () => {
               ))}
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Select Assignment/Exam</label>
-            <select 
+            <select
               value={selectedAssignment}
               onChange={(e) => setSelectedAssignment(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              {assignments.map(assignment => (
+              {assignments.map((assignment) => (
                 <option key={assignment.id} value={assignment.id}>
                   {assignment.name} ({assignment.type} - {assignment.maxScore} pts)
                 </option>
@@ -139,7 +133,7 @@ const GradeEntry: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Grade Entry Table */}
+      {/* Grade Table */}
       {selectedClass ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -149,14 +143,14 @@ const GradeEntry: React.FC = () => {
         >
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">
-              Grade Entry - {assignments.find(a => a.id === selectedAssignment)?.name}
+              Grade Entry - {assignments.find((a) => a.id === selectedAssignment)?.name}
             </h3>
-            <button className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+            <button className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
               <Save className="h-4 w-4 mr-2" />
               Save Grades
             </button>
           </div>
-          
+
           {studentsLoading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
@@ -172,32 +166,22 @@ const GradeEntry: React.FC = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Student
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reg Number</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Current CGPA</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Score ({assignments.find((a) => a.id === selectedAssignment)?.maxScore} pts)
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Registration Number
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Current CGPA
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Score ({assignments.find(a => a.id === selectedAssignment)?.maxScore} pts)
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Letter Grade
-                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Letter Grade</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {students.map((student: any, index: number) => {
-                    const currentScore = grades[student._id] || 0;
-                    const letterGrade = getLetterGrade(currentScore);
-                    const currentCGPA = getCurrentCGPA(student);
-                    
+                    const score = grades[student._id] || 0;
+                    const letter = getLetterGrade(score);
+                    const cgpa = getCurrentCGPA(student);
+
                     return (
                       <motion.tr
                         key={student._id}
@@ -208,11 +192,9 @@ const GradeEntry: React.FC = () => {
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-sm font-bold text-white">
-                                {student.userId?.profile?.firstName?.charAt(0) || 'S'}
-                                {student.userId?.profile?.lastName?.charAt(0) || ''}
-                              </span>
+                            <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center mr-3 text-white font-bold">
+                              {student.userId?.profile?.firstName?.[0] || 'S'}
+                              {student.userId?.profile?.lastName?.[0] || ''}
                             </div>
                             <div>
                               <div className="text-sm font-medium text-gray-900">
@@ -221,41 +203,48 @@ const GradeEntry: React.FC = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {student.registrationNumber}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`text-sm font-medium ${getGradeColor(currentCGPA * 20)}`}>
-                            {currentCGPA.toFixed(2)}
+                        <td className="px-6 py-4">{student.registrationNumber}</td>
+                        <td className="px-6 py-4">
+                          <span className={`text-sm font-medium ${getGradeColor(cgpa * 20)}`}>
+                            {cgpa.toFixed(2)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`text-sm font-medium ${
-                            student.academicInfo?.status === 'active' ? 'text-green-600' : 'text-gray-600'
-                          }`}>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`text-sm font-medium ${
+                              student.academicInfo?.status === 'active'
+                                ? 'text-green-600'
+                                : 'text-gray-600'
+                            }`}
+                          >
                             {student.academicInfo?.status || 'N/A'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-4">
                           <input
                             type="number"
                             min="0"
-                            max={assignments.find(a => a.id === selectedAssignment)?.maxScore || 100}
+                            max={assignments.find((a) => a.id === selectedAssignment)?.maxScore || 100}
                             value={grades[student._id] || ''}
                             onChange={(e) => handleGradeChange(student._id, parseInt(e.target.value) || 0)}
-                            className="w-20 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="0"
+                            className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500"
                           />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            letterGrade === 'A' ? 'bg-green-100 text-green-800' :
-                            letterGrade === 'B' ? 'bg-blue-100 text-blue-800' :
-                            letterGrade === 'C' ? 'bg-yellow-100 text-yellow-800' :
-                            letterGrade === 'D' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {letterGrade}
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                              letter === 'A'
+                                ? 'bg-green-100 text-green-800'
+                                : letter === 'B'
+                                ? 'bg-blue-100 text-blue-800'
+                                : letter === 'C'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : letter === 'D'
+                                ? 'bg-orange-100 text-orange-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {letter}
                           </span>
                         </td>
                       </motion.tr>
@@ -275,9 +264,6 @@ const GradeEntry: React.FC = () => {
         >
           <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">Select a class to start entering grades</p>
-          <p className="text-gray-400 text-sm mt-2">
-            Choose a class from the dropdown above to view students and enter their grades
-          </p>
         </motion.div>
       )}
 
@@ -293,21 +279,26 @@ const GradeEntry: React.FC = () => {
             <Award className="h-5 w-5 text-blue-600 mr-2" />
             <h3 className="text-lg font-semibold text-gray-900">Grade Distribution</h3>
           </div>
-          
+
           <div className="grid grid-cols-5 gap-4">
-            {['A', 'B', 'C', 'D', 'F'].map((grade, index) => {
-              const count = Object.values(grades).filter(score => getLetterGrade(score) === grade).length;
-              const percentage = students.length > 0 ? (count / students.length * 100).toFixed(1) : 0;
-              
+            {['A', 'B', 'C', 'D', 'F'].map((grade) => {
+              const count = Object.values(grades).filter((score) => getLetterGrade(score) === grade).length;
+              const percentage = ((count / students.length) * 100).toFixed(1);
               return (
                 <div key={grade} className="text-center p-4 bg-gray-50 rounded-lg">
-                  <div className={`text-2xl font-bold ${
-                    grade === 'A' ? 'text-green-600' :
-                    grade === 'B' ? 'text-blue-600' :
-                    grade === 'C' ? 'text-yellow-600' :
-                    grade === 'D' ? 'text-orange-600' :
-                    'text-red-600'
-                  }`}>
+                  <div
+                    className={`text-2xl font-bold ${
+                      grade === 'A'
+                        ? 'text-green-600'
+                        : grade === 'B'
+                        ? 'text-blue-600'
+                        : grade === 'C'
+                        ? 'text-yellow-600'
+                        : grade === 'D'
+                        ? 'text-orange-600'
+                        : 'text-red-600'
+                    }`}
+                  >
                     {count}
                   </div>
                   <div className="text-sm text-gray-600">Grade {grade}</div>

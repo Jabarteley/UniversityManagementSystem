@@ -3,8 +3,10 @@ import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
 import { Search, Filter, GraduationCap, Mail, Phone, Award, BookOpen, Eye, Edit } from 'lucide-react';
 import { studentsAPI } from '../api/students';
-import { useAuth } from '../hooks/useAuth';
+import { dashboardAPI } from '../api/dashboard';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
+import { useAuth } from '../hooks/useAuth';
+
 
 const MyStudents: React.FC = () => {
   const { user } = useAuth();
@@ -24,11 +26,7 @@ const MyStudents: React.FC = () => {
   // Fetch staff data to get teaching load
   const { data: staffData } = useQuery(
     'staffDashboardStats',
-    () => fetch('/api/dashboard/staff-stats', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    }).then(res => res.json()),
+    dashboardAPI.getStaffStats,
     {
       enabled: user?.role === 'staff',
       retry: 1,

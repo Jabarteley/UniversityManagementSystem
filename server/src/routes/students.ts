@@ -101,11 +101,22 @@ router.get('/:id', auth, async (req, res) => {
 router.get('/staff/:userId', auth, async (req, res) => {
   try {
     const { userId } = req.params;
-    const staff = await Staff.findOne({ userId }).populate('teachingLoad.researchSupervision.student');
+    console.log('Fetching students for staff userId:', userId);
+    const staff = await Staff.findOne({ userId });
     if (!staff) {
+      console.log('Staff not found for userId:', userId);
       return res.status(404).json({ message: 'Staff not found' });
     }
-    const students = staff.teachingLoad?.researchSupervision.map(item => item.student) || [];
+    console.log('Found staff:', staff._id);
+
+    const teachingCourseCodes = staff.teachingLoad?.courses.map(course => course.courseCode) || [];
+    console.log('Staff teaching course codes:', teachingCourseCodes);
+
+    const students = await Student.find({
+      'academicInfo.courses.courseCode': { $in: teachingCourseCodes }
+    }).populate('userId', 'profile');
+
+    console.log(`Found ${students.length} students for staff ${userId}`);
     res.json({ success: true, students });
   } catch (error) {
     console.error('Get students by staff error:', error);

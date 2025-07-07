@@ -21,6 +21,7 @@ import usersRoutes from './routes/users.js';
 import searchRoutes from './routes/search.js';
 import backupRoutes from './routes/backup.js';
 import filterRoutes from './routes/filters.js';
+import courseRoutes from './routes/courses.js';
 
 // Import services
 import DocumentProcessingService from './services/documentProcessing.js';
@@ -131,6 +132,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/filters', filterRoutes);
+app.use('/api/courses', courseRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

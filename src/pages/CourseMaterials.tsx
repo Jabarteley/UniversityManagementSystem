@@ -1,55 +1,75 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
-import { Upload, Download, Eye, FolderOpen, FileText, Plus, Search } from 'lucide-react';
+import { Upload, Download, Eye, FolderOpen, FileText, Plus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { documentsAPI } from '../api/documents';
+import { dashboardAPI } from '../api/dashboard';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 
 const CourseMaterials: React.FC = () => {
   const { user } = useAuth();
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   // Fetch staff dashboard data to get classes
-  const { data: staffData, isLoading: staffLoading } = useQuery(
-    'staffDashboardStats',
-    () => fetch('/api/dashboard/staff-stats', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    }).then(res => res.json()),
-    {
-      enabled: user?.role === 'staff',
-      retry: 1,
-      refetchOnWindowFocus: false
-    }
-  );
-
-  // Fetch documents/materials
-  const { data: documentsData, isLoading: documentsLoading } = useQuery(
-    ['courseMaterials', selectedClass, selectedCategory],
-    () => documentsAPI.getAll({ 
-      category: selectedCategory === 'all' ? undefined : selectedCategory,
-      limit: 50 
-    }),
-    {
-      retry: 1,
-      refetchOnWindowFocus: false
-    }
-  );
-
-  if (staffLoading) return <LoadingSpinner />;
+  const {
+    data: staffData,
+    isLoading: staffLoading
+  } = useQuery(['staffDashboardStats'], dashboardAPI.getStaffStats, {
+    enabled: user?.role === 'staff',
+    retry: 1,
+    refetchOnWindowFocus: false
+  });
 
   const classes = staffData?.myClasses || [];
-  const materials = documentsData?.documents || [];
 
-  // Set default class if not selected
-  React.useEffect(() => {
+  // Automatically select default class
+  useEffect(() => {
     if (classes.length > 0 && !selectedClass) {
       setSelectedClass(classes[0].courseCode);
     }
   }, [classes, selectedClass]);
+
+  // Fetch documents/materials
+  const { data: documentsData, isLoading: documentsLoading } = useQuery(
+    ['courseMaterials', selectedClass, selectedCategory],
+    () =>
+      documentsAPI.getAll({
+        category: selectedCategory === 'all' ? undefined : selectedCategory,
+        limit: 50
+      }),
+    {
+      retry: 1,
+      refetchOnWindowFocus: false
+    }
+  );
+
+  const materials = documentsData?.documents || [];
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('title', file.name);
+    formData.append('category', selectedCategory);
+    formData.append('course', selectedClass);
+
+    try {
+      await documentsAPI.create(formData);
+    } catch (error) {
+      setUploadError('Failed to upload file. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const getFileIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -70,52 +90,39 @@ const CourseMaterials: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  if (staffLoading) return <LoadingSpinner />;
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Course Materials</h1>
             <p className="text-gray-600">Upload and manage course materials for your classes</p>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             className="mt-4 sm:mt-0"
           >
-            <button className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+            <label
+              htmlFor="file-upload"
+              className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Upload Material
-            </button>
+              <input id="file-upload" type="file" onChange={handleFileUpload} className="hidden" />
+            </label>
           </motion.div>
         </div>
       </div>
 
-      {/* Upload Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-      >
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
-          <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-lg font-medium text-gray-900 mb-2">Upload Course Materials</p>
-          <p className="text-sm text-gray-500 mb-4">
-            Drag and drop files here or click to browse
-          </p>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            Choose Files
-          </button>
-        </div>
-      </motion.div>
+      {/* Upload Feedback */}
+      {isUploading && <p className="text-sm text-gray-500">Uploading...</p>}
+      {uploadError && <p className="text-sm text-red-500">{uploadError}</p>}
 
       {/* Filters */}
       <motion.div
@@ -127,10 +134,10 @@ const CourseMaterials: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
-            <select 
+            <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
             >
               <option value="">All Classes</option>
               {classes.map((cls: any) => (
@@ -140,42 +147,37 @@ const CourseMaterials: React.FC = () => {
               ))}
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-            <select 
+            <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
             >
               <option value="all">All Categories</option>
-              <option value="academic">Syllabus</option>
-              <option value="academic">Lecture Notes</option>
-              <option value="academic">Assignments</option>
-              <option value="academic">Lab Exercises</option>
+              <option value="syllabus">Syllabus</option>
+              <option value="lecture-notes">Lecture Notes</option>
+              <option value="assignments">Assignments</option>
+              <option value="lab-exercises">Lab Exercises</option>
             </select>
           </div>
         </div>
       </motion.div>
 
-      {/* Materials Grid */}
+      {/* Materials */}
       {documentsLoading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-sm text-gray-500 mt-2">Loading materials...</p>
-        </div>
+        <LoadingSpinner />
       ) : materials.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
+          transition={{ duration: 0.6 }}
           className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200"
         >
           <FolderOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">No course materials found</p>
-          <p className="text-gray-400 text-sm mt-2">
-            Upload your first course material to get started
-          </p>
+          <p className="text-gray-400 text-sm mt-2">Upload your first course material to get started</p>
         </motion.div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -186,8 +188,8 @@ const CourseMaterials: React.FC = () => {
                 key={material._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 * index }}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center">
@@ -195,9 +197,7 @@ const CourseMaterials: React.FC = () => {
                       <FileIcon className="h-6 w-6 text-blue-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold text-gray-900 truncate">
-                        {material.title}
-                      </h3>
+                      <h3 className="text-sm font-semibold text-gray-900 truncate">{material.title}</h3>
                       <p className="text-xs text-gray-500 mt-1">
                         {material.fileType?.toUpperCase()} • {formatFileSize(material.fileSize)}
                       </p>
@@ -208,64 +208,31 @@ const CourseMaterials: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="space-y-2 text-xs text-gray-500 mb-4">
-                  <div className="flex items-center justify-between">
-                    <span>Uploaded:</span>
-                    <span className="font-medium text-gray-900">
-                      {new Date(material.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>By:</span>
-                    <span className="font-medium text-gray-900">
-                      {material.uploadedBy?.profile?.firstName} {material.uploadedBy?.profile?.lastName}
-                    </span>
-                  </div>
+                <div className="text-xs text-gray-500 space-y-1 mb-4">
+                  <p>
+                    <strong>Uploaded:</strong> {new Date(material.createdAt).toLocaleDateString()}
+                  </p>
+                  <p>
+                    <strong>By:</strong>{' '}
+                    {material.uploadedBy?.profile?.firstName} {material.uploadedBy?.profile?.lastName}
+                  </p>
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                  <button className="flex items-center text-xs text-blue-600 hover:text-blue-700 transition-colors">
+                  <button className="flex items-center text-xs text-blue-600 hover:text-blue-700">
                     <Eye className="h-3 w-3 mr-1" />
                     Preview
                   </button>
-                  <div className="flex space-x-2">
-                    <button className="flex items-center text-xs text-green-600 hover:text-green-700 transition-colors">
-                      <Download className="h-3 w-3 mr-1" />
-                      Download
-                    </button>
-                  </div>
+                  <button className="flex items-center text-xs text-green-600 hover:text-green-700">
+                    <Download className="h-3 w-3 mr-1" />
+                    Download
+                  </button>
                 </div>
               </motion.div>
             );
           })}
         </div>
       )}
-
-      {/* Material Categories */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-      >
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Material Categories</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { name: 'Syllabus', count: materials.filter(m => m.title?.toLowerCase().includes('syllabus')).length, color: 'bg-blue-50 border-blue-200' },
-            { name: 'Lecture Notes', count: materials.filter(m => m.title?.toLowerCase().includes('lecture')).length, color: 'bg-green-50 border-green-200' },
-            { name: 'Assignments', count: materials.filter(m => m.title?.toLowerCase().includes('assignment')).length, color: 'bg-purple-50 border-purple-200' },
-            { name: 'Lab Exercises', count: materials.filter(m => m.title?.toLowerCase().includes('lab')).length, color: 'bg-orange-50 border-orange-200' }
-          ].map((category, index) => (
-            <div key={category.name} className={`p-4 border rounded-lg ${category.color}`}>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">{category.count}</div>
-                <div className="text-sm text-gray-600">{category.name}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </motion.div>
     </div>
   );
 };

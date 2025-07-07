@@ -3,6 +3,7 @@ import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
 import { BookOpen, Users, Calendar, Clock, Plus, Edit, Eye } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { dashboardAPI } from '../api/dashboard';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 
 const ClassManagement: React.FC = () => {
@@ -11,24 +12,8 @@ const ClassManagement: React.FC = () => {
 
   // Fetch staff dashboard data to get classes
  const { data: staffData, isLoading, error } = useQuery(
-  'staffDashboardStats',
-  () => fetch('/api/dashboard/staff-stats', {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    }
-  }).then(async res => {
-    const contentType = res.headers.get('content-type');
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Error ${res.status}: ${text}`);
-    }
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await res.text();
-      console.warn('❌ Not JSON:', text);
-      throw new Error('Invalid JSON response from server');
-    }
-    return res.json();
-  }),
+  ['staffDashboardStats'],
+  dashboardAPI.getStaffStats,
   {
     enabled: !!user?.role, // ✅ Only run when user is loaded
     retry: 1,

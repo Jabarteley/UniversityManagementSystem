@@ -240,15 +240,15 @@ router.delete('/:id', auth, authorize('admin'), async (req, res) => {
 // Get recent class reports
 router.get('/class/recent', auth, async (req, res) => {
   try {
-    const recentReports = await Report.find({ type: { $in: ['class-performance', 'class-attendance', 'class-progress', 'class-assignment'] } })
+    const recentReports = await Report.find({ type: { $in: ['performance', 'attendance', 'progress', 'assignment'] } })
       .sort({ createdAt: -1 })
       .limit(5)
-      .select('title type parameters.class generatedDate status');
+      .select('title type parameters.class createdAt status');
 
     res.json(recentReports.map(report => ({
       id: report._id,
       title: report.title,
-      type: report.type.replace('class-', '').replace('-', ' '),
+      type: report.type,
       class: report.parameters.class,
       generatedDate: report.createdAt,
       status: report.status
@@ -264,19 +264,57 @@ router.get('/class/:classCode/performance', auth, async (req, res) => {
   try {
     const { classCode } = req.params;
 
-    // Mock data for now, replace with actual aggregation from student results
+    const students = await Student.find({ 'academicInfo.courses.courseCode': classCode });
+
+    if (students.length === 0) {
+      return res.status(404).json({ message: 'No students found for this class' });
+    }
+
+    let totalScore = 0;
+    let highestScore = 0;
+    let lowestScore = 100;
+    let passCount = 0;
+    const gradeDistribution = {
+      A: 0,
+      B: 0,
+      C: 0,
+      D: 0,
+      F: 0,
+    };
+
+    students.forEach(student => {
+      student.results.forEach(result => {
+        result.courses.forEach(course => {
+          if (course.courseCode === classCode) {
+            const score = course.score;
+            totalScore += score;
+            if (score > highestScore) highestScore = score;
+            if (score < lowestScore) lowestScore = score;
+            if (score >= 50) passCount++;
+
+            if (score >= 90) gradeDistribution.A++;
+            else if (score >= 80) gradeDistribution.B++;
+            else if (score >= 70) gradeDistribution.C++;
+            else if (score >= 60) gradeDistribution.D++;
+            else gradeDistribution.F++;
+          }
+        });
+      });
+    });
+
+    const classAverage = totalScore / students.length;
+    const passRate = (passCount / students.length) * 100;
+
     const performanceData = {
-      classAverage: 78.5,
-      highestScore: 95,
-      lowestScore: 45,
-      passRate: 93,
-      gradeDistribution: [
-        { grade: 'A', count: 8, percentage: 18 },
-        { grade: 'B', count: 15, percentage: 33 },
-        { grade: 'C', count: 12, percentage: 27 },
-        { grade: 'D', count: 7, percentage: 16 },
-        { grade: 'F', count: 3, percentage: 7 }
-      ],
+      classAverage: classAverage.toFixed(2),
+      highestScore,
+      lowestScore,
+      passRate: passRate.toFixed(2),
+      gradeDistribution: Object.entries(gradeDistribution).map(([grade, count]) => ({
+        grade,
+        count,
+        percentage: ((count / students.length) * 100).toFixed(2),
+      })),
     };
 
     res.json(performanceData);

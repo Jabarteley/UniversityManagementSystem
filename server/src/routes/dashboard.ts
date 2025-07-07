@@ -4,6 +4,7 @@ import Staff from '../models/Staff.js';
 import Document from '../models/Document.js';
 import Report from '../models/Report.js';
 import User from '../models/User.js';
+import Course from '../models/Course.js';
 import { auth, AuthRequest } from '../middleware/auth.js';
 import { logger } from '../utils/logger.js';
 

@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
 import { BarChart3, Download, Eye, Plus, Calendar } from 'lucide-react';
+import { dashboardAPI } from '../api/dashboard';
+import LoadingSpinner from '../components/UI/LoadingSpinner';
+import { useAuth } from '../hooks/useAuth';
+
 import axios from 'axios';
 
 import { filtersAPI } from '../api/filters';
-import { reportsAPI } from '../api/reports';
+import { reportsAPI, Report } from '../api/reports';
 
 const reportTypes = [
   { id: 'performance', name: 'Class Performance', description: 'Grade distribution and statistics' },
@@ -17,13 +21,43 @@ const reportTypes = [
 const ClassReports: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedReportType, setSelectedReportType] = useState('performance');
+const { user } = useAuth();
 
-  const { data: classes = [], isLoading: classesLoading } = useQuery('classes', fetchClasses);
-  const { data: recentReports = [], isLoading: reportsLoading } = useQuery('recentReports', fetchRecentReports);
+const { data: staffData, isLoading: staffLoading } = useQuery(
+  ['staffDashboardStats'],
+  dashboardAPI.getStaffStats,
+  {
+    enabled: user?.role === 'staff',
+    retry: 1,
+    refetchOnWindowFocus: false
+  }
+);
+
+const classes = staffData?.myClasses || [];
+
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerateReport = async () => {
+    if (!selectedClass || !selectedReportType) return;
+
+    setIsGenerating(true);
+    try {
+      await reportsAPI.generateStudentReport({
+        title: `${selectedReportType} Report for ${selectedClass}`,
+        type: selectedReportType,
+        parameters: {
+          class: selectedClass,
+        },
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  const { data: recentReports = [], isLoading: reportsLoading } = useQuery('recentReports', reportsAPI.getRecentClassReports);
   const {
     data: performanceData,
     isLoading: perfLoading,
-  } = useQuery(['performanceData', selectedClass], () => fetchPerformanceData(selectedClass), {
+  } = useQuery(['performanceData', selectedClass], () => reportsAPI.getClassPerformanceData(selectedClass), {
     enabled: !!selectedClass && selectedReportType === 'performance',
   });
 
@@ -37,10 +71,23 @@ const ClassReports: React.FC = () => {
             <p className="text-gray-600">Generate and view reports for your classes</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="mt-4 sm:mt-0">
-            <button className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-              <Plus className="h-4 w-4 mr-2" />
-              Generate Report
-            </button>
+            <button
+            className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            onClick={handleGenerateReport}
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Generating...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Generate Report
+              </>
+            )}
+          </button>
           </motion.div>
         </div>
       </div>
