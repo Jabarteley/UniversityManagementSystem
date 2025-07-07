@@ -237,4 +237,53 @@ router.delete('/:id', auth, authorize('admin'), async (req, res) => {
   }
 });
 
+// Get recent class reports
+router.get('/class/recent', auth, async (req, res) => {
+  try {
+    const recentReports = await Report.find({ type: { $in: ['class-performance', 'class-attendance', 'class-progress', 'class-assignment'] } })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('title type parameters.class generatedDate status');
+
+    res.json(recentReports.map(report => ({
+      id: report._id,
+      title: report.title,
+      type: report.type.replace('class-', '').replace('-', ' '),
+      class: report.parameters.class,
+      generatedDate: report.createdAt,
+      status: report.status
+    })));
+  } catch (error) {
+    logger.error('Get recent class reports error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get class performance data
+router.get('/class/:classCode/performance', auth, async (req, res) => {
+  try {
+    const { classCode } = req.params;
+
+    // Mock data for now, replace with actual aggregation from student results
+    const performanceData = {
+      classAverage: 78.5,
+      highestScore: 95,
+      lowestScore: 45,
+      passRate: 93,
+      gradeDistribution: [
+        { grade: 'A', count: 8, percentage: 18 },
+        { grade: 'B', count: 15, percentage: 33 },
+        { grade: 'C', count: 12, percentage: 27 },
+        { grade: 'D', count: 7, percentage: 16 },
+        { grade: 'F', count: 3, percentage: 7 }
+      ],
+    };
+
+    res.json(performanceData);
+  } catch (error) {
+    logger.error('Get class performance data error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router;

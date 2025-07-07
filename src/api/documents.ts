@@ -116,4 +116,13 @@ export const documentsAPI = {
     const response = await apiClient.put(`/documents/${id}/archive`);
     return response.data;
   },
+  getByStudent: async (studentId: string, params?: any) => {
+    const response = await apiClient.get(`/documents/student/${studentId}`, { params });
+    return response.data;
+  },
+
+  getByClass: async (courseCode: string) => {
+    const response = await apiClient.get(`/documents/class/${courseCode}`);
+    return response.data;
+  },
 };

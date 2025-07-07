@@ -1,7 +1,8 @@
+// src/components/staff/AddStaffModal.tsx
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from 'react-query';
-import { staffAPI } from '../../api/staff';
 import toast from 'react-hot-toast';
+import { staffAPI } from '../../api/staff';
 
 interface AddStaffModalProps {
   isOpen: boolean;
@@ -18,43 +19,27 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
       toast.success('Staff created successfully');
       onClose();
     },
-    onError: () => {
+    onError: (err: any) => {
+      console.error(err);
       toast.error('Failed to create staff');
     },
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (name.startsWith('profile.')) {
-      const profileField = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        profile: {
-          ...prev.profile,
-          [profileField]: value
+
+    if (name.includes('.')) {
+      const keys = name.split('.');
+      setFormData((prev: any) => {
+        let temp = { ...prev };
+        let current = temp;
+        for (let i = 0; i < keys.length - 1; i++) {
+          current[keys[i]] = current[keys[i]] || {};
+          current = current[keys[i]];
         }
-      }));
-    } else if (name.includes('salary.')) {
-      const [parent, child] = name.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          salary: {
-            ...prev[parent]?.salary,
-            [child]: parseFloat(value)
-          }
-        }
-      }));
-    } else if (name.includes('.')) {
-      const [parent, child] = name.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value
-        }
-      }));
+        current[keys[keys.length - 1]] = value;
+        return temp;
+      });
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -62,74 +47,112 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutation.mutate(formData);
+
+    const {
+      staffId,
+      email,
+      password,
+      profile,
+      phone,
+      gender,
+      dateOfBirth,
+      address,
+      emergencyContact,
+      nextOfKin,
+      employmentInfo,
+      compensation,
+    } = formData;
+
+    const payload = {
+      staffId,
+      email,
+      password,
+      profile,
+      phone,
+      gender,
+      dateOfBirth,
+      address,
+      emergencyContact,
+      nextOfKin,
+      employmentInfo: {
+        ...employmentInfo,
+        dateOfAppointment: new Date(employmentInfo.dateOfAppointment),
+        currentStatus: employmentInfo.currentStatus,
+      },
+      compensation: {
+        basicSalary: Number(compensation?.basicSalary) || 0,
+        allowances: {
+          housing: Number(compensation?.allowances?.housing) || 0,
+          transport: Number(compensation?.allowances?.transport) || 0,
+          medical: Number(compensation?.allowances?.medical) || 0,
+          other: Number(compensation?.allowances?.other) || 0,
+        },
+        totalSalary: 0, // auto-calculated in backend
+        payGrade: compensation?.payGrade || '',
+      },
+    };
+
+    mutation.mutate(payload);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
-
-        <h3 className="text-lg font-semibold mb-4">Add New Staff</h3>
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="text" id="profile.firstName" name="profile.firstName" placeholder="First Name" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="given-name" />
-            <input type="text" id="profile.lastName" name="profile.lastName" placeholder="Last Name" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="family-name" />
-            <input type="text" id="staffId" name="staffId" placeholder="Staff ID" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
-            <input type="date" id="dateOfBirth" name="dateOfBirth" placeholder="Date of Birth" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="bday" />
-            <select id="gender" name="gender" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="sex">
-              <option value="">Select Gender</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-            </select>
-            <input type="email" id="email" name="email" placeholder="Email" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="email" />
-            <input type="password" id="password" name="password" placeholder="Password" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="new-password" />
-            <input type="text" id="phone" name="phone" placeholder="Phone" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="tel" />
-            <input type="text" id="address.street" name="address.street" placeholder="Street" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" autoComplete="address-line1" />
-            <input type="text" id="address.city" name="address.city" placeholder="City" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" autoComplete="address-level2" />
-            <input type="text" id="address.state" name="address.state" placeholder="State" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" autoComplete="address-level1" />
-            <input type="text" id="address.zipCode" name="address.zipCode" placeholder="Zip Code" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" autoComplete="postal-code" />
-            <input type="text" id="address.country" name="address.country" placeholder="Country" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" autoComplete="country-name" />
-            <input type="text" id="emergencyContact.name" name="emergencyContact.name" placeholder="Emergency Contact Name" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" autoComplete="off" />
-            <input type="text" id="emergencyContact.relationship" name="emergencyContact.relationship" placeholder="Emergency Contact Relationship" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
-            <input type="text" id="emergencyContact.phone" name="emergencyContact.phone" placeholder="Emergency Contact Phone" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
-            <input type="text" id="employmentInfo.department" name="employmentInfo.department" placeholder="Department" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="organization" />
-            <input type="text" id="employmentInfo.faculty" name="employmentInfo.faculty" placeholder="Faculty" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
-            <input type="text" id="employmentInfo.position" name="employmentInfo.position" placeholder="Position" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="organization-title" />
-            <input type="text" id="employmentInfo.rank" name="employmentInfo.rank" placeholder="Rank" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
-            <select id="employmentInfo.employmentType" name="employmentInfo.employmentType" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off">
-              <option value="">Select Employment Type</option>
-              <option value="academic">Academic</option>
-              <option value="administrative">Administrative</option>
-              <option value="support">Support</option>
-            </select>
-            <input type="date" id="employmentInfo.dateOfAppointment" name="employmentInfo.dateOfAppointment" placeholder="Date of Appointment" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
-            <select id="employmentInfo.currentStatus" name="employmentInfo.currentStatus" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off">
-              <option value="">Select Status</option>
-              <option value="active">Active</option>
-              <option value="on-leave">On Leave</option>
-              <option value="suspended">Suspended</option>
-              <option value="retired">Retired</option>
-              <option value="terminated">Terminated</option>
-            </select>
-            <input type="number" id="employmentInfo.salary.basic" name="employmentInfo.salary.basic" placeholder="Basic Salary" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" autoComplete="off" />
-            <input type="number" id="employmentInfo.salary.allowances" name="employmentInfo.salary.allowances" placeholder="Allowances" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" autoComplete="off" />
-            <input type="text" id="compensation.payGrade" name="compensation.payGrade" placeholder="Pay Grade" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
-            <input type="text" id="nextOfKin.name" name="nextOfKin.name" placeholder="Next of Kin Name" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
-            <input type="text" id="nextOfKin.relationship" name="nextOfKin.relationship" placeholder="Next of Kin Relationship" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
-            <input type="text" id="nextOfKin.phone" name="nextOfKin.phone" placeholder="Next of Kin Phone" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
-            <input type="text" id="nextOfKin.address" name="nextOfKin.address" placeholder="Next of Kin Address" onChange={handleChange} className="px-3 py-2 border border-gray-300 rounded-lg" required autoComplete="off" />
-          </div>
-          <div className="flex space-x-3 mt-4">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
-              Cancel
-            </button>
-            <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              Add Staff
-            </button>
-          </div>
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <h2 className="text-lg font-bold mb-4">Add New Staff</h2>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input name="staffId" placeholder="Staff ID" onChange={handleChange} required className="input" />
+          <input name="email" placeholder="Email" type="email" onChange={handleChange} required className="input" />
+          <input name="password" placeholder="Password" type="password" onChange={handleChange} required className="input" />
+          <input name="profile.firstName" placeholder="First Name" onChange={handleChange} required className="input" />
+          <input name="profile.lastName" placeholder="Last Name" onChange={handleChange} required className="input" />
+          <input name="phone" placeholder="Phone" onChange={handleChange} required className="input" />
+          <input name="gender" placeholder="Gender" onChange={handleChange} required className="input" />
+          <input name="dateOfBirth" type="date" placeholder="Date of Birth" onChange={handleChange} required className="input" />
+          <input name="address.street" placeholder="Street" onChange={handleChange} className="input" />
+          <input name="address.city" placeholder="City" onChange={handleChange} className="input" />
+          <input name="address.state" placeholder="State" onChange={handleChange} className="input" />
+          <input name="address.zipCode" placeholder="Zip Code" onChange={handleChange} className="input" />
+          <input name="address.country" placeholder="Country" onChange={handleChange} className="input" />
+          <input name="emergencyContact.name" placeholder="Emergency Contact Name" onChange={handleChange} className="input" />
+          <input name="emergencyContact.relationship" placeholder="Emergency Contact Relationship" onChange={handleChange} className="input" />
+          <input name="emergencyContact.phone" placeholder="Emergency Contact Phone" onChange={handleChange} className="input" />
+          <input name="nextOfKin.name" placeholder="Next of Kin Name" onChange={handleChange} className="input" />
+          <input name="nextOfKin.relationship" placeholder="Next of Kin Relationship" onChange={handleChange} className="input" />
+          <input name="nextOfKin.phone" placeholder="Next of Kin Phone" onChange={handleChange} className="input" />
+          <input name="nextOfKin.address" placeholder="Next of Kin Address" onChange={handleChange} className="input" />
+          <input name="employmentInfo.department" placeholder="Department" onChange={handleChange} className="input" />
+          <input name="employmentInfo.faculty" placeholder="Faculty" onChange={handleChange} className="input" />
+          <input name="employmentInfo.position" placeholder="Position" onChange={handleChange} className="input" />
+          <input name="employmentInfo.rank" placeholder="Rank" onChange={handleChange} className="input" />
+          <select name="employmentInfo.employmentType" onChange={handleChange} className="input">
+            <option value="">Select Type</option>
+            <option value="academic">Academic</option>
+            <option value="administrative">Administrative</option>
+            <option value="support">Support</option>
+            <option value="contract">Contract</option>
+          </select>
+          <input name="employmentInfo.dateOfAppointment" type="date" onChange={handleChange} className="input" />
+          <select name="employmentInfo.currentStatus" onChange={handleChange} className="input">
+            <option value="">Select Status</option>
+            <option value="active">Active</option>
+            <option value="on-leave">On Leave</option>
+            <option value="suspended">Suspended</option>
+            <option value="retired">Retired</option>
+            <option value="terminated">Terminated</option>
+          </select>
+          <input name="compensation.basicSalary" type="number" placeholder="Basic Salary" onChange={handleChange} className="input" />
+          <input name="compensation.allowances.housing" type="number" placeholder="Housing Allowance" onChange={handleChange} className="input" />
+          <input name="compensation.allowances.transport" type="number" placeholder="Transport Allowance" onChange={handleChange} className="input" />
+          <input name="compensation.allowances.medical" type="number" placeholder="Medical Allowance" onChange={handleChange} className="input" />
+          <input name="compensation.allowances.other" type="number" placeholder="Other Allowances" onChange={handleChange} className="input" />
+          <input name="compensation.payGrade" placeholder="Pay Grade" onChange={handleChange} className="input" />
         </form>
+        <div className="flex justify-end gap-4 mt-6">
+          <button onClick={onClose} className="px-4 py-2 border rounded">Cancel</button>
+          <button onClick={handleSubmit} className="px-4 py-2 bg-blue-600 text-white rounded">Create Staff</button>
+        </div>
       </div>
     </div>
   );

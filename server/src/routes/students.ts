@@ -1,6 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import Student from '../models/Student.js';
+import Staff from '../models/Staff.js';
 import { auth, authorize, AuthRequest } from '../middleware/auth.js';
 
 import User from '../models/User.js';
@@ -96,6 +97,33 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+// Get students by staff
+router.get('/staff/:userId', auth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const staff = await Staff.findOne({ userId }).populate('teachingLoad.researchSupervision.student');
+    if (!staff) {
+      return res.status(404).json({ message: 'Staff not found' });
+    }
+    const students = staff.teachingLoad?.researchSupervision.map(item => item.student) || [];
+    res.json({ success: true, students });
+  } catch (error) {
+    console.error('Get students by staff error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/class/:courseCode', auth, async (req, res) => {
+  try {
+    const { courseCode } = req.params;
+    const students = await Student.find({ 'results.courses.courseCode': courseCode });
+    res.json({ success: true, students });
+  } catch (error) {
+    console.error('Get students by class error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Create student
 router.post('/', auth, authorize('admin', 'staff'), [
   body('registrationNumber').notEmpty().withMessage('Registration number is required'),
@@ -114,14 +142,29 @@ router.post('/', auth, authorize('admin', 'staff'), [
 
     const { email, password, profile, ...studentData } = req.body;
 
-    const user = new User({
-      email,
-      password,
-      role: 'student',
-      profile
-    });
+    if (!password) {
+      return res.status(400).json({ message: 'Password is required for new user creation.' });
+    }
 
-    await user.save();
+    let user;
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      user = existingUser;
+    } else {
+      let username = email.split('@')[0];
+      if (username.length < 3) {
+        username = (username + '___').substring(0, 3); // Ensure min length of 3
+      }
+      user = new User({
+        email,
+        password,
+        username,
+        role: 'student',
+        profile
+      });
+      await user.save();
+    }
 
     const student = await Student.create({ ...studentData, userId: user._id });
 
@@ -155,6 +198,46 @@ router.put('/:id', auth, async (req: AuthRequest, res) => {
     res.json({ success: true, student });
   } catch (error) {
     console.error('Update student error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get student academic records and summary
+router.get('/:id/academic-records', auth, async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+
+    const student = await Student.findById(id);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Ensure the logged-in user is the student themselves or an admin/staff
+    if (req.user?.role === 'student' && req.user._id.toString() !== id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const records = student.results.map(result => ({
+      type: `Semester ${result.semester} Results`,
+      semester: result.semester,
+      year: result.year,
+      status: 'Available',
+      lastUpdated: student.updatedAt,
+      description: `Academic results for Semester ${result.semester}, ${result.year}`,
+      gpa: result.gpa,
+      cgpa: result.cgpa,
+      courses: result.courses
+    }));
+
+    const academicSummary = {
+      currentCGPA: student.results.length > 0 ? student.results[student.results.length - 1].cgpa : 0,
+      completedCourses: student.results.reduce((sum, result) => sum + result.courses.length, 0),
+      currentLevel: student.academicInfo.level,
+    };
+
+    res.json({ success: true, records, summary: academicSummary });
+  } catch (error) {
+    console.error('Get student academic records error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

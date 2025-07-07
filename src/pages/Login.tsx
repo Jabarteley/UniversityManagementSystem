@@ -144,12 +144,7 @@ const Login: React.FC = () => {
 
           <div className="mt-6 text-center">
             <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Demo Credentials:</p>
-              <div className="space-y-1 text-xs text-gray-600">
-                <p><strong>Admin:</strong> admin@university.edu / password123</p>
-                <p><strong>Staff:</strong> staff@university.edu / password123</p>
-                <p><strong>Student:</strong> student@university.edu / password123</p>
-              </div>
+              
             </div>
           </div>
         </motion.div>

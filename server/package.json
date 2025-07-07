@@ -8,7 +8,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
-    "backup": "node dist/utils/backup.js"
+    "backup": "node dist/utils/backup.js",
+    "build:scripts": "tsc --project tsconfig.json --outDir dist/scripts src/scripts/linkProfiles.ts",
+    "build:scripts": "tsc --project tsconfig.json --outDir dist/scripts src/scripts/linkProfiles.ts"
   },
   "dependencies": {
     "archiver": "^6.0.1",

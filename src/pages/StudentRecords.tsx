@@ -1,44 +1,30 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Download, Eye, BookOpen, Award, Calendar, FileText } from 'lucide-react';
+import { useQuery } from 'react-query';
+import { useAuth } from '../hooks/useAuth';
+import LoadingSpinner from '../components/UI/LoadingSpinner';
+import { studentsAPI } from '../api/students';
 
 const StudentRecords: React.FC = () => {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const studentRecords = [
+  const { data, isLoading, error } = useQuery(
+    ['studentAcademicRecords', user?.id],
+    () => studentsAPI.getStudentAcademicRecords(user?.id || ''),
     {
-      id: 1,
-      type: 'Academic Transcript',
-      semester: 'Fall 2023',
-      status: 'Available',
-      lastUpdated: '2024-01-15',
-      description: 'Complete academic record with grades and CGPA'
-    },
-    {
-      id: 2,
-      type: 'Course Registration',
-      semester: 'Spring 2024',
-      status: 'Available',
-      lastUpdated: '2024-01-10',
-      description: 'Current semester course enrollment'
-    },
-    {
-      id: 3,
-      type: 'Financial Statement',
-      semester: 'Fall 2023',
-      status: 'Available',
-      lastUpdated: '2024-01-05',
-      description: 'Tuition fees and payment history'
-    },
-    {
-      id: 4,
-      type: 'Scholarship Record',
-      semester: 'Academic Year 2023-2024',
-      status: 'Available',
-      lastUpdated: '2023-12-20',
-      description: 'Merit scholarship award details'
+      enabled: !!user?.id,
+      retry: 1,
+      refetchOnWindowFocus: false
     }
-  ];
+  );
+
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <div className="text-center py-12 text-red-500">Error loading academic records.</div>;
+
+  const studentRecords = data?.records || [];
+  const academicSummary = data?.summary || {};
 
   const filteredRecords = studentRecords.filter(record =>
     record.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -145,15 +131,15 @@ const StudentRecords: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center p-4 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">3.75</div>
+            <div className="text-2xl font-bold text-green-600">{academicSummary.currentCGPA?.toFixed(2) || 'N/A'}</div>
             <div className="text-sm text-green-700">Current CGPA</div>
           </div>
           <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">24</div>
+            <div className="text-2xl font-bold text-blue-600">{academicSummary.completedCourses || 0}</div>
             <div className="text-sm text-blue-700">Completed Courses</div>
           </div>
           <div className="text-center p-4 bg-purple-50 rounded-lg">
-            <div className="text-2xl font-bold text-purple-600">300</div>
+            <div className="text-2xl font-bold text-purple-600">{academicSummary.currentLevel || 'N/A'}</div>
             <div className="text-sm text-purple-700">Current Level</div>
           </div>
         </div>

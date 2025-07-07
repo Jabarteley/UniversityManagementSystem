@@ -342,15 +342,12 @@ const staffSchema = new Schema<IStaff>({
   }],
   teachingLoad: {
     courses: [{
-      courseCode: { type: String, required: true },
-      courseName: { type: String, required: true },
-      semester: { type: String, required: true },
-      year: { type: Number, required: true },
-      creditHours: { type: Number, required: true },
-      studentCount: { type: Number, required: true }
+      type: Schema.Types.ObjectId,
+      ref: 'Course'
     }],
     totalCreditHours: { type: Number, default: 0 },
     researchSupervision: [{
+      student: { type: Schema.Types.ObjectId, ref: 'Student' },
       studentName: { type: String, required: true },
       level: {
         type: String,

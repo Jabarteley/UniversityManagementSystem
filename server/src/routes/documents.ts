@@ -396,6 +396,52 @@ router.get('/search/query', auth, async (req: AuthRequest, res) => {
   }
 });
 
+// Get documents uploaded by a specific student
+router.get('/student/:studentId', auth, async (req: AuthRequest, res) => {
+  try {
+    const { studentId } = req.params;
+    const { page = 1, limit = 20, search, category } = req.query;
+
+    let query: any = { uploadedBy: studentId, isActive: true };
+
+    if (category) query.category = category;
+
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { originalName: { $regex: search, $options: 'i' } },
+        { tags: { $in: [new RegExp(search as string, 'i')] } }
+      ];
+    }
+
+    const documents = await Document.find(query)
+      .populate('uploadedBy', 'profile username')
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit as string))
+      .skip((parseInt(page as string) - 1) * parseInt(limit as string));
+
+    const total = await Document.countDocuments(query);
+
+    res.json({
+      success: true,
+      documents,
+      pagination: {
+        page: parseInt(page as string),
+        pages: Math.ceil(total / parseInt(limit as string)),
+        total,
+        limit: parseInt(limit as string)
+      }
+    });
+  } catch (error) {
+    logger.error('Get student documents error:', error);
+    res.status(500).json({ 
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    });
+  }
+});
+
 // Get document analytics
 router.get('/:id/analytics', auth, authorize('admin', 'system-admin'), async (req: AuthRequest, res) => {
   try {
@@ -415,6 +461,17 @@ router.get('/:id/analytics', auth, authorize('admin', 'system-admin'), async (re
     });
   } catch (error) {
     logger.error('Get document analytics error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/class/:courseCode', auth, async (req, res) => {
+  try {
+    const { courseCode } = req.params;
+    const documents = await Document.find({ 'relatedTo.name': courseCode });
+    res.json({ success: true, documents });
+  } catch (error) {
+    console.error('Get documents by class error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -1,11 +1,36 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, FileText, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { useMutation } from 'react-query';
+import { documentsAPI } from '../api/documents';
+import toast from 'react-hot-toast';
 
 const UploadDocuments: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [uploadStatus, setUploadStatus] = useState<{ [key: string]: 'uploading' | 'success' | 'error' }>({});
+
+  const uploadMutation = useMutation(
+    (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('title', file.name.split('.')[0]);
+      formData.append('category', 'academic');
+      formData.append('accessLevel', 'restricted');
+      return documentsAPI.upload(formData);
+    },
+    {
+      onSuccess: (data, variables) => {
+        setUploadStatus(prev => ({ ...prev, [variables.name]: 'success' }));
+        setUploadProgress(prev => ({ ...prev, [variables.name]: 100 }));
+        toast.success(`Successfully uploaded ${variables.name}`);
+      },
+      onError: (error: any, variables) => {
+        setUploadStatus(prev => ({ ...prev, [variables.name]: 'error' }));
+        toast.error(`Failed to upload ${variables.name}: ${error.message}`);
+      },
+    }
+  );
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -19,14 +44,8 @@ const UploadDocuments: React.FC = () => {
   const handleUpload = async () => {
     for (const file of selectedFiles) {
       setUploadStatus(prev => ({ ...prev, [file.name]: 'uploading' }));
-      
-      // Simulate upload progress
-      for (let progress = 0; progress <= 100; progress += 10) {
-        setUploadProgress(prev => ({ ...prev, [file.name]: progress }));
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      
-      setUploadStatus(prev => ({ ...prev, [file.name]: 'success' }));
+      setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
+      uploadMutation.mutate(file);
     }
   };
 
@@ -114,7 +133,6 @@ const UploadDocuments: React.FC = () => {
                     <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
                     <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
                     
-                    {/* Upload Progress */}
                     {uploadStatus[file.name] === 'uploading' && (
                       <div className="mt-2">
                         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -129,7 +147,6 @@ const UploadDocuments: React.FC = () => {
                       </div>
                     )}
                     
-                    {/* Upload Success */}
                     {uploadStatus[file.name] === 'success' && (
                       <div className="flex items-center mt-2">
                         <CheckCircle className="h-4 w-4 text-green-600 mr-1" />
@@ -156,99 +173,6 @@ const UploadDocuments: React.FC = () => {
           </div>
         </motion.div>
       )}
-
-      {/* Document Categories */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-      >
-        <div className="flex items-center mb-4">
-          <AlertCircle className="h-5 w-5 text-blue-600 mr-2" />
-          <h3 className="text-lg font-semibold text-gray-900">Document Categories</h3>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="p-4 border border-green-200 rounded-lg bg-green-50">
-              <h4 className="font-medium text-green-900 mb-2">Academic Submissions</h4>
-              <ul className="text-sm text-green-700 space-y-1">
-                <li>• Assignment submissions</li>
-                <li>• Project reports</li>
-                <li>• Thesis drafts</li>
-                <li>• Research papers</li>
-              </ul>
-            </div>
-            
-            <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
-              <h4 className="font-medium text-blue-900 mb-2">Administrative Forms</h4>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Course registration</li>
-                <li>• Leave applications</li>
-                <li>• Change of program</li>
-                <li>• Transcript requests</li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="p-4 border border-purple-200 rounded-lg bg-purple-50">
-              <h4 className="font-medium text-purple-900 mb-2">Personal Documents</h4>
-              <ul className="text-sm text-purple-700 space-y-1">
-                <li>• Medical certificates</li>
-                <li>• Identity documents</li>
-                <li>• Financial aid forms</li>
-                <li>• Emergency contact updates</li>
-              </ul>
-            </div>
-            
-            <div className="p-4 border border-orange-200 rounded-lg bg-orange-50">
-              <h4 className="font-medium text-orange-900 mb-2">Internship & Career</h4>
-              <ul className="text-sm text-orange-700 space-y-1">
-                <li>• Internship reports</li>
-                <li>• Job placement forms</li>
-                <li>• Industry training certificates</li>
-                <li>• Career counseling requests</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Upload Guidelines */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-      >
-        <div className="flex items-center mb-4">
-          <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-          <h3 className="text-lg font-semibold text-gray-900">Upload Guidelines</h3>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">File Requirements</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
-              <li>• Maximum file size: 10MB</li>
-              <li>• Supported formats: PDF, DOC, DOCX, JPG, PNG</li>
-              <li>• Clear, readable documents only</li>
-              <li>• Proper file naming recommended</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">Processing Time</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
-              <li>• Academic submissions: 3-5 business days</li>
-              <li>• Administrative forms: 1-2 business days</li>
-              <li>• Personal documents: 2-3 business days</li>
-              <li>• Urgent requests: Contact registry office</li>
-            </ul>
-          </div>
-        </div>
-      </motion.div>
     </div>
   );
 };

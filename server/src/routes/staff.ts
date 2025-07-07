@@ -17,6 +17,9 @@ router.get('/', auth, async (req, res) => {
     const employmentType = req.query.employmentType as string;
     const status = req.query.status as string;
 
+
+    
+
     const query: any = { isActive: { $ne: false } };
     if (search) {
       query.$or = [
@@ -90,14 +93,29 @@ router.post('/', auth, authorize('admin'), [
 
     const { email, password, profile, ...staffData } = req.body;
 
-    const user = new User({
-      email,
-      password,
-      role: 'staff',
-      profile
-    });
+    if (!password) {
+      return res.status(400).json({ message: 'Password is required for new user creation.' });
+    }
 
-    await user.save();
+    let user;
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      user = existingUser;
+    } else {
+      let username = email.split('@')[0];
+      if (username.length < 3) {
+        username = (username + '___').substring(0, 3); // Ensure min length of 3
+      }
+      user = new User({
+        email,
+        password,
+        username,
+        role: 'staff',
+        profile
+      });
+      await user.save();
+    }
 
     const staff = await Staff.create({ ...staffData, userId: user._id });
 

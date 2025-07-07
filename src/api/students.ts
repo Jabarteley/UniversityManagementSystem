@@ -76,6 +76,16 @@ export const studentsAPI = {
     return response.data;
   },
 
+  getByStaffId: async (userId: string) => {
+    const response = await apiClient.get(`/students/staff/${userId}`);
+    return response.data;
+  },
+
+  getByClass: async (courseCode: string) => {
+    const response = await apiClient.get(`/students/class/${courseCode}`);
+    return response.data;
+  },
+
   getByRegistrationNumber: async (regNumber: string) => {
     const response = await apiClient.get(`/students/registration/${regNumber}`);
     return response.data;
@@ -98,6 +108,10 @@ export const studentsAPI = {
 
   addResult: async (id: string, result: any) => {
     const response = await apiClient.post(`/students/${id}/results`, result);
+    return response.data;
+  },
+  getStudentAcademicRecords: async (studentId: string) => {
+    const response = await apiClient.get(`/students/${studentId}/academic-records`);
     return response.data;
   },
 };

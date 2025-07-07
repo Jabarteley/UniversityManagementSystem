@@ -68,4 +68,12 @@ export const reportsAPI = {
     const response = await apiClient.delete(`/reports/${id}`);
     return response.data;
   },
+  getRecentClassReports: async () => {
+    const response = await apiClient.get('/reports/class/recent');
+    return response.data;
+  },
+  getClassPerformanceData: async (classCode: string) => {
+    const response = await apiClient.get(`/reports/class/${classCode}/performance`);
+    return response.data;
+  },
 };

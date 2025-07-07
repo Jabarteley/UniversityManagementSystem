@@ -268,11 +268,16 @@ router.get('/staff-stats', auth, async (req: AuthRequest, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    const staff = await Staff.findOne({ userId: req.user._id });
+    logger.debug('Attempting to find staff for userId:', req.user?._id);
+    const staff = await Staff.findOne({ userId: req.user._id })
+      .populate('teachingLoad.courses')
+      .populate('teachingLoad.researchSupervision.student');
 
     if (!staff) {
+      logger.warning('Staff profile not found for userId:', req.user?._id);
       return res.status(404).json({ message: 'Staff profile not found' });
     }
+    logger.debug('Staff profile found:', staff._id);
 
     // Calculate staff-specific stats
     const totalStudentsSupervised = staff.teachingLoad?.researchSupervision?.length || 0;

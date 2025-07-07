@@ -5,48 +5,24 @@ import { Upload, Download, Eye, FolderOpen, FileText, Image, CheckCircle } from 
 const StudentDocuments: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  const documents = [
+  const { user } = useAuth();
+  const { data, isLoading, error } = useQuery(
+    ['studentDocuments', selectedCategory, user?.id],
+    () => documentsAPI.getStudentDocuments(user?.id || '', {
+      category: selectedCategory === 'all' ? undefined : selectedCategory as any,
+    }),
     {
-      id: 1,
-      name: 'Course Registration Form - Spring 2024',
-      category: 'academic',
-      type: 'PDF',
-      size: '2.4 MB',
-      uploadDate: '2024-01-15',
-      status: 'Approved'
-    },
-    {
-      id: 2,
-      name: 'Internship Report - Fall 2023',
-      category: 'academic',
-      type: 'PDF',
-      size: '5.2 MB',
-      uploadDate: '2024-01-10',
-      status: 'Under Review'
-    },
-    {
-      id: 3,
-      name: 'Medical Certificate',
-      category: 'personal',
-      type: 'PDF',
-      size: '1.1 MB',
-      uploadDate: '2024-01-08',
-      status: 'Approved'
-    },
-    {
-      id: 4,
-      name: 'Thesis Proposal',
-      category: 'academic',
-      type: 'DOCX',
-      size: '3.8 MB',
-      uploadDate: '2024-01-05',
-      status: 'Approved'
+      enabled: !!user?.id,
+      keepPreviousData: true,
     }
-  ];
+  );
 
-  const filteredDocuments = selectedCategory === 'all' 
-    ? documents 
-    : documents.filter(doc => doc.category === selectedCategory);
+  const documents = data?.documents || [];
+
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <div className="text-center py-12 text-red-500">Error loading documents.</div>;
+
+  const filteredDocuments = documents;
 
   const getStatusColor = (status: string) => {
     switch (status) {

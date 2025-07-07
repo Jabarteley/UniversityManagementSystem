@@ -1,6 +1,8 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import User from '../models/User.js';
+import Student from '../models/Student.js';
+import Staff from '../models/Staff.js';
 import { auth, authorize } from '../middleware/auth.js';
 import { logger } from '../utils/logger.js';
 
@@ -75,6 +77,21 @@ router.post('/', auth, authorize('admin', 'system-admin'), [
 
     const user = await User.create(req.body);
 
+    // Create corresponding student or staff profile if role is student or staff
+    if (user.role === 'student') {
+      const student = new Student({ userId: user._id, academicInfo: {}, emergencyContact: {}, guardian: {}, financial: {}, results: [], documents: [], medical: {}, activities: {}, registrationNumber: `REG-${Date.now()}` });
+      await student.save();
+      user.recordRef = student._id;
+      user.recordType = 'Student';
+      await user.save();
+    } else if (user.role === 'staff') {
+      const staff = new Staff({ userId: user._id, employmentInfo: {}, teachingLoad: {}, qualifications: [], documents: [], research: [], professionalDevelopment: {}, leave: {}, performanceReviews: {}, staffId: `STAFF-${Date.now()}` });
+      await staff.save();
+      user.recordRef = staff._id;
+      user.recordType = 'Staff';
+      await user.save();
+    }
+
     res.status(201).json({
       success: true,
       user: {
@@ -83,7 +100,9 @@ router.post('/', auth, authorize('admin', 'system-admin'), [
         email: user.email,
         role: user.role,
         profile: user.profile,
-        permissions: user.permissions
+        permissions: user.permissions,
+        recordRef: user.recordRef,
+        recordType: user.recordType
       }
     });
   } catch (error) {

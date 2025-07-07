@@ -259,7 +259,7 @@ const Students: React.FC = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500">Latest CGPA</span>
                     <span className="font-bold text-blue-600">
-                      {student.results?.[student.results.length - 1]?.cgpa?.toFixed(2) ?? 'N/A'}
+                      {student.results[student.results.length - 1]?.cgpa?.toFixed(2) ?? 'N/A'}
                     </span>
                   </div>
                 </div>

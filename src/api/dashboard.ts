@@ -13,4 +13,8 @@ export const dashboardAPI = {
     const response = await apiClient.get('/dashboard/staff-stats');
     return response.data;
   },
+  getActivities: async () => {
+    const response = await apiClient.get('/dashboard/activities');
+    return response.data;
+  },
 };
