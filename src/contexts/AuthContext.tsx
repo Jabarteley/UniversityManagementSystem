@@ -3,6 +3,8 @@ import { authAPI } from '../api/auth';
 
 interface User {
   id: string;
+  studentId?: string;
+  staffId?: string;
   username: string;
   email: string;
   role: 'student' | 'staff' | 'admin' | 'system-admin';

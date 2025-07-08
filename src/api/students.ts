@@ -105,6 +105,14 @@ export const studentsAPI = {
     const response = await apiClient.delete(`/students/${id}`);
     return response.data;
   },
+  registerCourses: async (id: string, courseIds: string[]) => {
+    const response = await apiClient.post(`/students/${id}/register-courses`, { courseIds });
+    return response.data;
+  },
+  getStudentsByStaff: async (staffId: string) => {
+    const response = await apiClient.get(`/students/staff/${staffId}`);
+    return response.data;
+  },
 
   addResult: async (id: string, result: any) => {
     const response = await apiClient.post(`/students/${id}/results`, result);

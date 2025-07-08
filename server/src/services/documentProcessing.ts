@@ -69,7 +69,11 @@ export class DocumentProcessingService {
     try {
       // Get file from Cloudinary
       const fileUrl = cloudinary.url(cloudinaryId, { resource_type: 'auto' });
+      console.log('Cloudinary file URL:', fileUrl);
       const response = await fetch(fileUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file from Cloudinary: ${response.statusText}`);
+      }
       const buffer = Buffer.from(await response.arrayBuffer());
 
       let extractedText = '';

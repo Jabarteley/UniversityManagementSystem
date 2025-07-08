@@ -15,6 +15,7 @@ export interface IStudent extends Document {
     status: 'active' | 'graduated' | 'suspended' | 'withdrawn' | 'deferred';
     expectedGraduation?: Date;
     advisor?: mongoose.Types.ObjectId;
+    courses?: mongoose.Types.ObjectId[];
   };
   
   // Emergency Contact
@@ -126,7 +127,8 @@ const studentSchema = new Schema<IStudent>({
       default: 'active'
     },
     expectedGraduation: Date,
-    advisor: { type: Schema.Types.ObjectId, ref: 'Staff' }
+    advisor: { type: Schema.Types.ObjectId, ref: 'Staff' },
+    courses: [{ type: Schema.Types.ObjectId, ref: 'Course' }]
   },
   emergencyContact: {
     name: { type: String, required: true },

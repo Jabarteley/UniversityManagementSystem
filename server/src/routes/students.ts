@@ -109,11 +109,11 @@ router.get('/staff/:userId', auth, async (req, res) => {
     }
     console.log('Found staff:', staff._id);
 
-    const teachingCourseCodes = staff.teachingLoad?.courses.map(course => course.courseCode) || [];
-    console.log('Staff teaching course codes:', teachingCourseCodes);
+    const teachingCourseIds = staff.teachingLoad?.courses.map(course => course._id) || [];
+    console.log('Staff teaching course IDs:', teachingCourseIds);
 
     const students = await Student.find({
-      'academicInfo.courses.courseCode': { $in: teachingCourseCodes }
+      'academicInfo.courses': { $in: teachingCourseIds }
     }).populate('userId', 'profile');
 
     console.log(`Found ${students.length} students for staff ${userId}`);
@@ -218,13 +218,13 @@ router.get('/:id/academic-records', auth, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
 
-    const student = await Student.findById(id);
+    const student = await Student.findOne({ userId: id });
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
     }
 
     // Ensure the logged-in user is the student themselves or an admin/staff
-    if (req.user?.role === 'student' && req.user._id.toString() !== id) {
+    if (req.user?.role === 'student' && req.user._id.toString() !== student.userId.toString()) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -272,6 +272,32 @@ router.post('/:id/results', auth, authorize('admin', 'staff'), async (req: AuthR
     res.json({ success: true, student });
   } catch (error) {
     console.error('Add result error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Register courses for a student
+router.post('/:id/register-courses', auth, authorize('student'), async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const { courseIds } = req.body;
+
+    if (req.user?._id.toString() !== id) {
+      return res.status(403).json({ message: 'Access denied. You can only register courses for yourself.' });
+    }
+
+    const student = await Student.findById(id);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Add new courses, avoiding duplicates
+    student.academicInfo.courses = [...new Set([...student.academicInfo.courses, ...courseIds])];
+    await student.save();
+
+    res.json({ success: true, student });
+  } catch (error) {
+    console.error('Course registration error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

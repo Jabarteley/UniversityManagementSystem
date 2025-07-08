@@ -115,11 +115,21 @@ export const uploadAudio = multer({
 
 // Generic upload for any file type
 export const uploadAny = multer({
-  storage: createCloudinaryStorage('general', []),
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: (req, file) => ({
+      folder: 'urms/general',
+      resource_type: 'auto',
+      use_filename: true,
+      unique_filename: true,
+      // ⚠️ removed allowed_formats to let Cloudinary decide
+    }),
+  }),
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB limit
-  }
+    fileSize: 100 * 1024 * 1024,
+  },
 });
+
 
 // Utility functions
 export const deleteFromCloudinary = async (publicId: string) => {

@@ -2,6 +2,8 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
 import User from '../models/User.js';
+import Student from '../models/Student.js';
+import Staff from '../models/Staff.js';
 import { auth, AuthRequest } from '../middleware/auth.js';
 import { logger } from '../utils/logger.js';
 
@@ -208,9 +210,20 @@ router.post('/login', [
       ? defaultPermissions 
       : { ...defaultPermissions, ...foundUser.permissions };
 
+    let studentId, staffId;
+    if (foundUser.role === 'student') {
+      const student = await Student.findOne({ userId: foundUser._id });
+      if (student) studentId = student._id.toString();
+    } else if (foundUser.role === 'staff') {
+      const staff = await Staff.findOne({ userId: foundUser._id });
+      if (staff) staffId = staff._id.toString();
+    }
+
     // Prepare user response with safe data
     const userResponse = {
       id: foundUser._id,
+      studentId,
+      staffId,
       username: foundUser.username || foundUser.email.split('@')[0],
       email: foundUser.email,
       role: foundUser.role,
@@ -255,8 +268,19 @@ router.get('/me', auth, async (req: AuthRequest, res) => {
       ? defaultPermissions 
       : { ...defaultPermissions, ...user.permissions };
 
+    let studentId, staffId;
+    if (user.role === 'student') {
+      const student = await Student.findOne({ userId: user._id });
+      if (student) studentId = student._id.toString();
+    } else if (user.role === 'staff') {
+      const staff = await Staff.findOne({ userId: user._id });
+      if (staff) staffId = staff._id.toString();
+    }
+
     const userResponse = {
       id: user._id,
+      studentId,
+      staffId,
       username: user.username || user.email.split('@')[0],
       email: user.email,
       role: user.role,

@@ -375,11 +375,30 @@ const Reports: React.FC = () => {
                 </div>
                 
                 <div className="flex space-x-2">
-                  <button className="flex items-center px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                  <button 
+                    onClick={() => window.open(report.filePath, '_blank')}
+                    className="flex items-center px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                  >
                     <Eye className="h-4 w-4 mr-1" />
                     View
                   </button>
-                  <button className="flex items-center px-3 py-1 text-sm font-medium text-green-600 hover:text-green-700 transition-colors">
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const blob = await reportsAPI.download(report._id);
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${report.title}.${report.format}`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                      } catch (error) {
+                        toast.error('Failed to download report');
+                      }
+                    }}
+                    className="flex items-center px-3 py-1 text-sm font-medium text-green-600 hover:text-green-700 transition-colors"
+                  >
                     <Download className="h-4 w-4 mr-1" />
                     Download
                   </button>

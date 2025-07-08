@@ -24,6 +24,7 @@ import ClassManagement from './pages/ClassManagement';
 import GradeEntry from './pages/GradeEntry';
 import CourseMaterials from './pages/CourseMaterials';
 import ClassReports from './pages/ClassReports';
+import CourseRegistration from './pages/CourseRegistration';
 import LoadingSpinner from './components/UI/LoadingSpinner';
 import { testConnection } from './api/client';
 
@@ -187,6 +188,14 @@ function App() {
                           element={
                             <RoleBasedRoute allowedRoles={['student']}>
                               <UploadDocuments />
+                            </RoleBasedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/course-registration" 
+                          element={
+                            <RoleBasedRoute allowedRoles={['student']}>
+                              <CourseRegistration />
                             </RoleBasedRoute>
                           } 
                         />

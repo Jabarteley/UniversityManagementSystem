@@ -1,17 +1,29 @@
 // src/components/staff/AddStaffModal.tsx
-import React, { useState } from 'react';
-import { useMutation, useQueryClient } from 'react-query';
+import React, { useState, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from 'react-query';
 import toast from 'react-hot-toast';
 import { staffAPI } from '../../api/staff';
+import { coursesAPI } from '../../api/courses';
 
 interface AddStaffModalProps {
   isOpen: boolean;
   onClose: () => void;
+  staff?: any;
 }
 
-const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
+const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, staff }) => {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<any>({});
+
+  const { data: coursesData } = useQuery('courses', coursesAPI.getAll, { enabled: isOpen });
+
+  useEffect(() => {
+    if (staff) {
+      setFormData(staff);
+    } else {
+      setFormData({});
+    }
+  }, [staff, isOpen]);
 
   const mutation = useMutation(staffAPI.create, {
     onSuccess: () => {
@@ -28,7 +40,16 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
-    if (name.includes('.')) {
+    if (name === 'teachingLoad.courses') {
+      const selectedCourses = Array.from(e.target.selectedOptions, option => option.value);
+      setFormData(prev => ({
+        ...prev,
+        teachingLoad: {
+          ...prev.teachingLoad,
+          courses: selectedCourses,
+        },
+      }));
+    } else if (name.includes('.')) {
       const keys = name.split('.');
       setFormData((prev: any) => {
         let temp = { ...prev };
@@ -148,6 +169,23 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
           <input name="compensation.allowances.medical" type="number" placeholder="Medical Allowance" onChange={handleChange} className="input" />
           <input name="compensation.allowances.other" type="number" placeholder="Other Allowances" onChange={handleChange} className="input" />
           <input name="compensation.payGrade" placeholder="Pay Grade" onChange={handleChange} className="input" />
+
+          <div className="md:col-span-2">
+            <label htmlFor="courses" className="block text-sm font-medium text-gray-700">Assign Courses</label>
+            <select 
+              multiple 
+              name="teachingLoad.courses" 
+              onChange={handleChange} 
+              className="input mt-1 block w-full h-32"
+              value={formData.teachingLoad?.courses || []}
+            >
+              {coursesData?.courses.map((course: any) => (
+                <option key={course._id} value={course._id}>
+                  {course.courseName} ({course.courseCode})
+                </option>
+              ))}
+            </select>
+          </div>
         </form>
         <div className="flex justify-end gap-4 mt-6">
           <button onClick={onClose} className="px-4 py-2 border rounded">Cancel</button>

@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import { motion } from 'framer-motion';
+import { useQuery } from 'react-query';
 import { Upload, Download, Eye, FolderOpen, FileText, Image, CheckCircle } from 'lucide-react';
+import { documentsAPI } from '../api/documents';
+import LoadingSpinner from '../components/UI/LoadingSpinner';
 
 const StudentDocuments: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -8,7 +12,7 @@ const StudentDocuments: React.FC = () => {
   const { user } = useAuth();
   const { data, isLoading, error } = useQuery(
     ['studentDocuments', selectedCategory, user?.id],
-    () => documentsAPI.getStudentDocuments(user?.id || '', {
+    () => documentsAPI.getByStudent(user?.id || '', {
       category: selectedCategory === 'all' ? undefined : selectedCategory as any,
     }),
     {

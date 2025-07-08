@@ -62,6 +62,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       href: '/profile',
       icon: User,
     },
+    {
+      name: 'Course Registration',
+      href: '/course-registration',
+      icon: BookOpen,
+    },
   ];
 
   // Staff Navigation Items

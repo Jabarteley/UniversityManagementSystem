@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import AddStudentModal from '../components/Students/AddStudentModal'; 
-import { useQuery } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { motion } from 'framer-motion';
-import { Plus, Filter, Search, Mail, Phone, GraduationCap, Calendar, User, BookOpen } from 'lucide-react';
+import { Plus, Filter, Search, Mail, Phone, GraduationCap, Edit, Trash2, User, BookOpen } from 'lucide-react';
 import { studentsAPI } from '../api/students';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 
 import { filtersAPI } from '../api/filters';
 
 const Students: React.FC = () => {
+  const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [filters, setFilters] = useState({
     search: '',
     faculty: '',
@@ -18,7 +21,7 @@ const Students: React.FC = () => {
     status: ''
   });
 
-  const { data, isLoading, error } = useQuery(
+  const { data, isLoading, error, refetch } = useQuery(
     ['students', filters],
     () => studentsAPI.getAll(filters),
     {
@@ -26,9 +29,35 @@ const Students: React.FC = () => {
     }
   );
 
+  const deleteMutation = useMutation(studentsAPI.delete, {
+    onSuccess: () => {
+      queryClient.invalidateQueries('students');
+      toast.success('Student deleted successfully');
+    },
+    onError: () => {
+      toast.error('Failed to delete student');
+    },
+  });
+
   const { data: faculties } = useQuery('faculties', filtersAPI.getFaculties);
   const { data: departments } = useQuery('departments', filtersAPI.getDepartments);
   const { data: levels } = useQuery('levels', filtersAPI.getLevels);
+
+  const handleAddStudent = () => {
+    setSelectedStudent(null);
+    setShowAddModal(true);
+  };
+
+  const handleEditStudent = (student: any) => {
+    setSelectedStudent(student);
+    setShowAddModal(true);
+  };
+
+  const handleDeleteStudent = (studentId: string) => {
+    if (window.confirm('Are you sure you want to delete this student?')) {
+      deleteMutation.mutate(studentId);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -264,11 +293,29 @@ const Students: React.FC = () => {
                   </div>
                 </div>
               )}
+            <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleEditStudent(student); }}
+                    className="p-2 text-blue-600 hover:text-blue-700 transition-colors"
+                    title="Edit Student"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleDeleteStudent(student._id); }}
+                    className="p-2 text-red-600 hover:text-red-700 transition-colors"
+                    title="Delete Student"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>
       )}
-    <AddStudentModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} />
+    <AddStudentModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} student={selectedStudent} />
     </div>
   );
 };

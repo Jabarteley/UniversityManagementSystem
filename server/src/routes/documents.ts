@@ -105,7 +105,7 @@ router.get('/', auth, async (req: AuthRequest, res) => {
 });
 
 // Upload document
-router.post('/upload', auth, [
+router.post('/upload', auth, uploadAny.single('file'), [
   body('title').notEmpty().withMessage('Document title is required'),
   body('category').isIn(['academic', 'administrative', 'personal', 'financial', 'legal', 'medical', 'research']).withMessage('Valid category is required'),
   body('accessLevel').isIn(['public', 'restricted', 'confidential', 'classified']).withMessage('Valid access level is required')
@@ -133,8 +133,9 @@ router.post('/upload', auth, [
     } = req.body;
 
     // Process document for text extraction and metadata
+    logger.info('req.file:', req.file);
     const { extractedText, metadata } = await documentProcessor.processDocument(
-      req.file.filename,
+      (req.file as any).public_id,
       req.file.originalname.split('.').pop() || ''
     );
 
@@ -153,9 +154,9 @@ router.post('/upload', auth, [
       fileType: req.file.originalname.split('.').pop()?.toLowerCase() || '',
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
-      cloudinaryId: req.file.filename,
-      cloudinaryUrl: (req.file as any).path,
-      cloudinarySecureUrl: (req.file as any).path,
+      cloudinaryId: (req.file as any).public_id,
+      cloudinaryUrl: (req.file as any).secure_url,
+      cloudinarySecureUrl: (req.file as any).secure_url,
       cloudinaryFolder: 'urms/documents',
       ocrText: extractedText,
       extractedMetadata: metadata,
