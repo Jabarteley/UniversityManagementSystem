@@ -30,7 +30,7 @@ import BackupService from './services/backupService.js';
 
 import { errorHandler } from './middleware/errorHandler.js';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
