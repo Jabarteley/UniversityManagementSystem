@@ -466,15 +466,9 @@ const Dashboard: React.FC = () => {
     },
     {
       title: 'Total Documents',
-      value: stats.totalFiles || 0,
+      value: stats.totalDocuments || 0,
       icon: FolderOpen,
       color: 'bg-orange-500',
-    },
-    {
-      title: 'Total Reports',
-      value: stats.totalReports || 0,
-      icon: FileText,
-      color: 'bg-purple-500',
     },
   ];
 

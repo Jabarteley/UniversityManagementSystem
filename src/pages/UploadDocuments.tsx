@@ -1,51 +1,48 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, FileText, AlertCircle, CheckCircle, X } from 'lucide-react';
-import { useMutation } from 'react-query';
+import { useMutation, useQueryClient } from 'react-query';
 import { documentsAPI } from '../api/documents';
 import toast from 'react-hot-toast';
 
 const UploadDocuments: React.FC = () => {
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
-  const [uploadStatus, setUploadStatus] = useState<{ [key: string]: 'uploading' | 'success' | 'error' }>({});
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('academic');
+  const [accessLevel, setAccessLevel] = useState('restricted');
+  const queryClient = useQueryClient();
 
-  const uploadMutation = useMutation(
-    (file: File) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('title', file.name.split('.')[0]);
-      formData.append('category', 'academic');
-      formData.append('accessLevel', 'restricted');
-      return documentsAPI.upload(formData);
-    },
+  const uploadMutation = useMutation(documentsAPI.upload,
     {
-      onSuccess: (data, variables) => {
-        setUploadStatus(prev => ({ ...prev, [variables.name]: 'success' }));
-        setUploadProgress(prev => ({ ...prev, [variables.name]: 100 }));
-        toast.success(`Successfully uploaded ${variables.name}`);
+      onSuccess: () => {
+        toast.success(`Successfully uploaded ${title}`);
+        setSelectedFile(null);
+        setTitle('');
+        setCategory('academic');
+        setAccessLevel('restricted');
+        queryClient.invalidateQueries('documents');
       },
-      onError: (error: any, variables) => {
-        setUploadStatus(prev => ({ ...prev, [variables.name]: 'error' }));
-        toast.error(`Failed to upload ${variables.name}: ${error.message}`);
+      onError: (error: any) => {
+        toast.error(`Failed to upload document: ${error.message}`);
       },
     }
   );
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    setSelectedFiles(prev => [...prev, ...files]);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedFile(event.target.files[0]);
+      setTitle(event.target.files[0].name.split('.')[0]);
+    }
   };
 
-  const removeFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleUpload = async () => {
-    for (const file of selectedFiles) {
-      setUploadStatus(prev => ({ ...prev, [file.name]: 'uploading' }));
-      setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
-      uploadMutation.mutate(file);
+  const handleUpload = () => {
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('title', title);
+      formData.append('category', category);
+      formData.append('accessLevel', accessLevel);
+      uploadMutation.mutate(formData);
     }
   };
 
@@ -83,15 +80,14 @@ const UploadDocuments: React.FC = () => {
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-green-500 transition-colors">
           <Upload className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Drop files here or click to browse
+            Drop file here or click to browse
           </h3>
           <p className="text-sm text-gray-500 mb-4">
             Supported formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB per file)
           </p>
           <input
             type="file"
-            multiple
-            onChange={handleFileSelect}
+            onChange={handleFileChange}
             className="hidden"
             id="file-upload"
             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
@@ -101,78 +97,78 @@ const UploadDocuments: React.FC = () => {
             className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
           >
             <Upload className="h-4 w-4 mr-2" />
-            Choose Files
+            Choose File
           </label>
         </div>
-      </motion.div>
 
-      {/* Selected Files */}
-      {selectedFiles.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Selected Files ({selectedFiles.length})</h3>
-            <button
-              onClick={handleUpload}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Upload All
-            </button>
-          </div>
-          
-          <div className="space-y-3">
-            {selectedFiles.map((file, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center flex-1">
-                  <FileText className="h-5 w-5 text-gray-400 mr-3" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                    <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-                    
-                    {uploadStatus[file.name] === 'uploading' && (
-                      <div className="mt-2">
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${uploadProgress[file.name] || 0}%` }}
-                          ></div>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Uploading... {uploadProgress[file.name] || 0}%
-                        </p>
-                      </div>
-                    )}
-                    
-                    {uploadStatus[file.name] === 'success' && (
-                      <div className="flex items-center mt-2">
-                        <CheckCircle className="h-4 w-4 text-green-600 mr-1" />
-                        <p className="text-xs text-green-600">Upload successful</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  {uploadStatus[file.name] === 'success' ? (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <button
-                      onClick={() => removeFile(index)}
-                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
+        {selectedFile && (
+          <div className="mt-6 space-y-4">
+            <div>
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
+              <input
+                type="text"
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+              />
+            </div>
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700">Category</label>
+              <select
+                id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+              >
+                <option value="academic">Academic</option>
+                <option value="administrative">Administrative</option>
+                <option value="personal">Personal</option>
+                <option value="financial">Financial</option>
+                <option value="legal">Legal</option>
+                <option value="medical">Medical</option>
+                <option value="research">Research</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="accessLevel" className="block text-sm font-medium text-gray-700">Access Level</label>
+              <select
+                id="accessLevel"
+                value={accessLevel}
+                onChange={(e) => setAccessLevel(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+              >
+                <option value="public">Public</option>
+                <option value="restricted">Restricted</option>
+                <option value="confidential">Confidential</option>
+                <option value="classified">Classified</option>
+              </select>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center flex-1">
+                <FileText className="h-5 w-5 text-gray-400 mr-3" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{selectedFile.name}</p>
+                  <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
                 </div>
               </div>
-            ))}
+              <button
+                onClick={() => setSelectedFile(null)}
+                className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <button
+              onClick={handleUpload}
+              disabled={uploadMutation.isLoading || !selectedFile || !title}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+            >
+              {uploadMutation.isLoading ? 'Uploading...' : 'Upload Document'}
+            </button>
           </div>
-        </motion.div>
-      )}
+        )}
+      </motion.div>
     </div>
   );
 };

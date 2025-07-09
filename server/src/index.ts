@@ -24,12 +24,12 @@ import filterRoutes from './routes/filters.js';
 import courseRoutes from './routes/courses.js';
 
 // Import services
-import DocumentProcessingService from './services/documentProcessing.js';
+
 import SearchService from './services/searchService.js';
 import BackupService from './services/backupService.js';
 
 import { errorHandler } from './middleware/errorHandler.js';
-import multer from 'multer';
+
 
 dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
@@ -50,9 +50,9 @@ connectDB();
 const initializeServices = async () => {
   try {
     // Initialize document processing service
-    const documentProcessor = DocumentProcessingService.getInstance();
-    await documentProcessor.initializeOCR();
-    logger.info('Document processing service initialized');
+    // const documentProcessor = DocumentProcessingService.getInstance();
+    // await documentProcessor.initializeOCR();
+    // logger.info('Document processing service initialized');
 
     // Initialize search service
     const searchService = SearchService.getInstance();
@@ -189,29 +189,9 @@ app.get('/', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
-// Multer error handling
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (err instanceof multer.MulterError) {
-    logger.error('Multer error:', err.message);
-    return res.status(400).json({ success: false, message: `File upload error: ${err.message}` });
-  } else if (err) {
-    logger.error('Generic upload error:', err.message);
-    return res.status(500).json({ success: false, message: 'An unknown error occurred during file upload.' });
-  }
-  next();
-});
 
-// Multer error handling
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (err instanceof multer.MulterError) {
-    logger.error('Multer error:', err.message);
-    return res.status(400).json({ success: false, message: `File upload error: ${err.message}` });
-  } else if (err) {
-    logger.error('Generic upload error:', err.message);
-    return res.status(500).json({ success: false, message: 'An unknown error occurred during file upload.' });
-  }
-  next();
-});
+
+
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -239,9 +219,9 @@ process.on('SIGTERM', async () => {
   
   // Cleanup services
   try {
-    const documentProcessor = DocumentProcessingService.getInstance();
-    await documentProcessor.cleanup();
-    logger.info('Document processing service cleaned up');
+    // const documentProcessor = DocumentProcessingService.getInstance();
+    // await documentProcessor.cleanup();
+    // logger.info('Document processing service cleaned up');
   } catch (error) {
     logger.error('Error cleaning up services:', error);
   }

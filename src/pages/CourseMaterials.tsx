@@ -1,18 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { useQuery } from 'react-query';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { motion } from 'framer-motion';
-import { Upload, Download, Eye, FolderOpen, FileText, Plus } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
 import { documentsAPI } from '../api/documents';
 import { dashboardAPI } from '../api/dashboard';
+import { useAuth } from '../hooks/useAuth';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
+import { Upload, FileText, Download, Eye, Plus } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const CourseMaterials: React.FC = () => {
   const { user } = useAuth();
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedClass, setSelectedClass] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('academic');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [title, setTitle] = useState('');
+  const queryClient = useQueryClient();
 
   // Fetch staff dashboard data to get classes
   const {
@@ -37,53 +39,46 @@ const CourseMaterials: React.FC = () => {
   const { data: documentsData, isLoading: documentsLoading } = useQuery(
     ['courseMaterials', selectedClass, selectedCategory],
     () =>
-      documentsAPI.getAll({
-        category: selectedCategory === 'all' ? undefined : selectedCategory,
-        limit: 50
-      }),
+      documentsAPI.getAll(), // Assuming getAll can filter by category and courseCode on the backend
     {
       retry: 1,
       refetchOnWindowFocus: false
     }
   );
 
-  const materials = documentsData?.documents || [];
+  const uploadMutation = useMutation(documentsAPI.upload, {
+    onSuccess: () => {
+      toast.success(`Successfully uploaded ${title}`);
+      setSelectedFile(null);
+      setTitle('');
+      queryClient.invalidateQueries('courseMaterials');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to upload material: ${error.message}`);
+    },
+  });
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    setUploadError(null);
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('title', file.name);
-    formData.append('category', selectedCategory);
-    formData.append('course', selectedClass);
-
-    try {
-      await documentsAPI.create(formData);
-    } catch (error) {
-      setUploadError('Failed to upload file. Please try again.');
-    } finally {
-      setIsUploading(false);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedFile(event.target.files[0]);
+      setTitle(event.target.files[0].name.split('.')[0]);
     }
   };
 
-  const getFileIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'pdf':
-        return FileText;
-      case 'zip':
-        return FolderOpen;
-      default:
-        return FileText;
+  const handleUpload = () => {
+    if (selectedFile && selectedClass && title) {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('title', title);
+      formData.append('category', selectedCategory);
+      formData.append('relatedToType', 'Course');
+      formData.append('relatedToId', selectedClass);
+      uploadMutation.mutate(formData);
     }
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (!bytes) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -91,6 +86,8 @@ const CourseMaterials: React.FC = () => {
   };
 
   if (staffLoading) return <LoadingSpinner />;
+
+  const materials = documentsData?.data || [];
 
   return (
     <div className="space-y-6">
@@ -114,15 +111,15 @@ const CourseMaterials: React.FC = () => {
             >
               <Plus className="h-4 w-4 mr-2" />
               Upload Material
-              <input id="file-upload" type="file" onChange={handleFileUpload} className="hidden" />
+              <input id="file-upload" type="file" onChange={handleFileChange} className="hidden" />
             </label>
           </motion.div>
         </div>
       </div>
 
       {/* Upload Feedback */}
-      {isUploading && <p className="text-sm text-gray-500">Uploading...</p>}
-      {uploadError && <p className="text-sm text-red-500">{uploadError}</p>}
+      {uploadMutation.isLoading && <p className="text-sm text-gray-500">Uploading...</p>}
+      {uploadMutation.isError && <p className="text-sm text-red-500">Error uploading file.</p>}
 
       {/* Filters */}
       <motion.div
@@ -155,14 +152,37 @@ const CourseMaterials: React.FC = () => {
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg"
             >
-              <option value="all">All Categories</option>
-              <option value="syllabus">Syllabus</option>
-              <option value="lecture-notes">Lecture Notes</option>
-              <option value="assignments">Assignments</option>
-              <option value="lab-exercises">Lab Exercises</option>
+              <option value="academic">Academic</option>
+              <option value="administrative">Administrative</option>
+              <option value="personal">Personal</option>
+              <option value="financial">Financial</option>
+              <option value="legal">Legal</option>
+              <option value="medical">Medical</option>
+              <option value="research">Research</option>
             </select>
           </div>
         </div>
+        {selectedFile && (
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Selected File Details</h3>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center flex-1">
+                <FileText className="h-5 w-5 text-gray-400 mr-3" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{selectedFile.name}</p>
+                  <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleUpload}
+                disabled={uploadMutation.isLoading || !selectedFile || !title || !selectedClass}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+              >
+                {uploadMutation.isLoading ? 'Uploading...' : 'Confirm Upload'}
+              </button>
+            </div>
+          </div>
+        )}
       </motion.div>
 
       {/* Materials */}
@@ -182,7 +202,7 @@ const CourseMaterials: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {materials.map((material: any, index: number) => {
-            const FileIcon = getFileIcon(material.fileType);
+            const FileIcon = FileText; // Assuming all course materials are documents
             return (
               <motion.div
                 key={material._id}
@@ -219,14 +239,14 @@ const CourseMaterials: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                  <button className="flex items-center text-xs text-blue-600 hover:text-blue-700">
+                  <a href={material.cloudinaryUrl} target="_blank" rel="noopener noreferrer" className="flex items-center text-xs text-blue-600 hover:text-blue-700">
                     <Eye className="h-3 w-3 mr-1" />
                     Preview
-                  </button>
-                  <button className="flex items-center text-xs text-green-600 hover:text-green-700">
+                  </a>
+                  <a href={material.cloudinaryUrl} download className="flex items-center text-xs text-green-600 hover:text-green-700">
                     <Download className="h-3 w-3 mr-1" />
                     Download
-                  </button>
+                  </a>
                 </div>
               </motion.div>
             );

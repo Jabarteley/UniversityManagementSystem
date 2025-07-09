@@ -18,6 +18,7 @@ import ResultPortal from './pages/ResultPortal';
 import Profile from './pages/Profile';
 import StudentRecords from './pages/StudentRecords';
 import StudentDocuments from './pages/StudentDocuments';
+import Documents from './pages/Documents';
 import UploadDocuments from './pages/UploadDocuments';
 import MyStudents from './pages/MyStudents';
 import ClassManagement from './pages/ClassManagement';
@@ -175,8 +176,8 @@ function App() {
                             </RoleBasedRoute>
                           } 
                         />
-                        <Route 
-                          path="/my-documents" 
+                        <Route path="/documents" element={<RoleBasedRoute allowedRoles={['admin', 'system-admin', 'staff', 'student']}><Documents /></RoleBasedRoute>} />
+                        <Route path="/my-documents" 
                           element={
                             <RoleBasedRoute allowedRoles={['student']}>
                               <StudentDocuments />
