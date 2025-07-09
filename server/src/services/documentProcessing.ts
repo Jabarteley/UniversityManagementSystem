@@ -20,9 +20,7 @@ export class DocumentProcessingService {
   // Initialize OCR worker
   async initializeOCR(): Promise<void> {
     if (!this.ocrWorker) {
-      this.ocrWorker = await createWorker();
-      await this.ocrWorker.loadLanguage('eng');
-      await this.ocrWorker.initialize('eng');
+      this.ocrWorker = await createWorker('eng');
     }
   }
 
@@ -62,13 +60,13 @@ export class DocumentProcessingService {
   }
 
   // Process document based on type
-  async processDocument(cloudinaryId: string, fileType: string): Promise<{
+  async processDocument(cloudinaryId: string, fileType: string, secureUrl: string): Promise<{
     extractedText: string;
     metadata: any;
   }> {
     try {
-      // Get file from Cloudinary
-      const fileUrl = cloudinary.url(cloudinaryId, { resource_type: 'auto' });
+      // Get file from Cloudinary using the secure URL
+      const fileUrl = secureUrl;
       console.log('Cloudinary file URL:', fileUrl);
       const response = await fetch(fileUrl);
       if (!response.ok) {

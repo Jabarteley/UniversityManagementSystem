@@ -110,11 +110,13 @@ router.post('/upload', auth, uploadAny.single('file'), [
   body('category').isIn(['academic', 'administrative', 'personal', 'financial', 'legal', 'medical', 'research']).withMessage('Valid category is required'),
   body('accessLevel').isIn(['public', 'restricted', 'confidential', 'classified']).withMessage('Valid access level is required')
 ], async (req: AuthRequest, res) => {
+  logger.info('Received document upload request.');
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
+
 
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -136,7 +138,8 @@ router.post('/upload', auth, uploadAny.single('file'), [
     logger.info('req.file:', req.file);
     const { extractedText, metadata } = await documentProcessor.processDocument(
       (req.file as any).public_id,
-      req.file.originalname.split('.').pop() || ''
+      req.file.originalname.split('.').pop() || '',
+      (req.file as any).secure_url
     );
 
     // Extract keywords from text
