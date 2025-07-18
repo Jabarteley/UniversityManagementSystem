@@ -7,6 +7,8 @@ import mongoSanitize from 'express-mongo-sanitize';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
+import fileUpload from 'express-fileupload';
 import { connectDB } from './config/database.js';
 import { logger } from './utils/logger.js';
 
@@ -118,6 +120,11 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 app.use('/api/', limiter);
+
+app.use(fileUpload({
+  useTempFiles: true,
+  tempFileDir: os.tmpdir(),
+}));
 
 // Body parsing middleware
 app.use(express.json({ limit: '50mb' }));

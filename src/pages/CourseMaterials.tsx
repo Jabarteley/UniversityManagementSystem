@@ -5,7 +5,7 @@ import { documentsAPI } from '../api/documents';
 import { dashboardAPI } from '../api/dashboard';
 import { useAuth } from '../hooks/useAuth';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
-import { Upload, FileText, Download, Eye, Plus } from 'lucide-react';
+import { Upload, FileText, Download, Eye, Plus, FolderOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const CourseMaterials: React.FC = () => {
@@ -38,8 +38,7 @@ const CourseMaterials: React.FC = () => {
   // Fetch documents/materials
   const { data: documentsData, isLoading: documentsLoading } = useQuery(
     ['courseMaterials', selectedClass, selectedCategory],
-    () =>
-      documentsAPI.getAll(), // Assuming getAll can filter by category and courseCode on the backend
+    () => documentsAPI.getAll({ courseCode: selectedClass, category: selectedCategory }),
     {
       retry: 1,
       refetchOnWindowFocus: false

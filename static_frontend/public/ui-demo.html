@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University Records Management System - UI Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>URMS</span>
+                </div>
+                <nav class="nav-menu">
+                    <a href="#dashboard" class="nav-link active">Dashboard</a>
+                    <a href="#students" class="nav-link">Students</a>
+                    <a href="#staff" class="nav-link">Staff</a>
+                    <a href="#documents" class="nav-link">Documents</a>
+                    <a href="#reports" class="nav-link">Reports</a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search records...">
+                </div>
+                <div class="notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge">3</span>
+                </div>
+                <div class="user-profile">
+                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face" alt="User">
+                    <span>Admin User</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-university"></i>
+                <span>University Portal</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <h3>Main</h3>
+                <a href="#dashboard" class="nav-item active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#analytics" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <h3>Personnel</h3>
+                <a href="#students" class="nav-item">
+                    <i class="fas fa-user-graduate"></i>
+                    <span>Students</span>
+                    <span class="nav-badge">1,234</span>
+                </a>
+                <a href="#staff" class="nav-item">
+                    <i class="fas fa-users"></i>
+                    <span>Staff</span>
+                    <span class="nav-badge">156</span>
+                </a>
+                <a href="#faculty" class="nav-item">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span>Faculty</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <h3>Records</h3>
+                <a href="#documents" class="nav-item">
+                    <i class="fas fa-folder-open"></i>
+                    <span>Documents</span>
+                </a>
+                <a href="#files" class="nav-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Files</span>
+                </a>
+                <a href="#archives" class="nav-item">
+                    <i class="fas fa-archive"></i>
+                    <span>Archives</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <h3>Reports</h3>
+                <a href="#reports" class="nav-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Reports</span>
+                </a>
+                <a href="#analytics" class="nav-item">
+                    <i class="fas fa-analytics"></i>
+                    <span>Analytics</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="content-section active">
+            <div class="page-header">
+                <h1>Dashboard Overview</h1>
+                <p>Welcome to the University Records Management System</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card primary">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>1,234</h3>
+                        <p>Total Students</p>
+                        <span class="stat-change positive">+12% from last month</span>
+                    </div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>156</h3>
+                        <p>Staff Members</p>
+                        <span class="stat-change positive">+3% from last month</span>
+                    </div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-icon">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>8,567</h3>
+                        <p>Documents</p>
+                        <span class="stat-change positive">+25% from last month</span>
+                    </div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>342</h3>
+                        <p>Reports Generated</p>
+                        <span class="stat-change negative">-5% from last month</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts and Tables -->
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3>Student Enrollment Trends</h3>
+                        <div class="card-actions">
+                            <button class="btn-icon"><i class="fas fa-download"></i></button>
+                            <button class="btn-icon"><i class="fas fa-ellipsis-v"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="enrollmentChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3>Recent Activities</h3>
+                        <a href="#" class="view-all">View All</a>
+                    </div>
+                    <div class="activity-list">
+                        <div class="activity-item">
+                            <div class="activity-icon student">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p><strong>John Doe</strong> registered as new student</p>
+                                <span class="activity-time">2 hours ago</span>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon document">
+                                <i class="fas fa-file-upload"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p><strong>Sarah Wilson</strong> uploaded transcript</p>
+                                <span class="activity-time">4 hours ago</span>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon report">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p><strong>System</strong> generated monthly report</p>
+                                <span class="activity-time">6 hours ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Students Section -->
+        <section id="students" class="content-section">
+            <div class="page-header">
+                <h1>Student Management</h1>
+                <div class="page-actions">
+                    <button class="btn btn-outline">
+                        <i class="fas fa-download"></i>
+                        Export
+                    </button>
+                    <button class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Add Student
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="search-filter">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search students...">
+                </div>
+                <div class="filter-group">
+                    <select class="filter-select">
+                        <option>All Faculties</option>
+                        <option>Engineering</option>
+                        <option>Medicine</option>
+                        <option>Arts</option>
+                    </select>
+                    <select class="filter-select">
+                        <option>All Levels</option>
+                        <option>100 Level</option>
+                        <option>200 Level</option>
+                        <option>300 Level</option>
+                    </select>
+                    <select class="filter-select">
+                        <option>All Status</option>
+                        <option>Active</option>
+                        <option>Graduated</option>
+                        <option>Suspended</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Students Table -->
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" class="checkbox">
+                            </th>
+                            <th>Student</th>
+                            <th>Registration No.</th>
+                            <th>Faculty</th>
+                            <th>Level</th>
+                            <th>Status</th>
+                            <th>CGPA</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="checkbox" class="checkbox"></td>
+                            <td>
+                                <div class="user-cell">
+                                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face" alt="Student">
+                                    <div>
+                                        <div class="user-name">John Doe</div>
+                                        <div class="user-email">john.doe@university.edu</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>UNI/2023/001</td>
+                            <td>Engineering</td>
+                            <td>300</td>
+                            <td><span class="status-badge active">Active</span></td>
+                            <td>3.75</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon" title="View"><i class="fas fa-eye"></i></button>
+                                    <button class="btn-icon" title="Edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-icon" title="Delete"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input type="checkbox" class="checkbox"></td>
+                            <td>
+                                <div class="user-cell">
+                                    <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face" alt="Student">
+                                    <div>
+                                        <div class="user-name">Sarah Wilson</div>
+                                        <div class="user-email">sarah.wilson@university.edu</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>UNI/2023/002</td>
+                            <td>Medicine</td>
+                            <td>400</td>
+                            <td><span class="status-badge active">Active</span></td>
+                            <td>4.20</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon" title="View"><i class="fas fa-eye"></i></button>
+                                    <button class="btn-icon" title="Edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-icon" title="Delete"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <button class="pagination-btn" disabled>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <span class="pagination-dots">...</span>
+                <button class="pagination-btn">10</button>
+                <button class="pagination-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Documents Section -->
+        <section id="documents" class="content-section">
+            <div class="page-header">
+                <h1>Document Management</h1>
+                <div class="page-actions">
+                    <button class="btn btn-outline">
+                        <i class="fas fa-filter"></i>
+                        Filter
+                    </button>
+                    <button class="btn btn-primary">
+                        <i class="fas fa-upload"></i>
+                        Upload Document
+                    </button>
+                </div>
+            </div>
+
+            <!-- Document Categories -->
+            <div class="category-grid">
+                <div class="category-card">
+                    <div class="category-icon academic">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="category-content">
+                        <h3>Academic</h3>
+                        <p>2,345 documents</p>
+                    </div>
+                </div>
+                <div class="category-card">
+                    <div class="category-icon administrative">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="category-content">
+                        <h3>Administrative</h3>
+                        <p>1,567 documents</p>
+                    </div>
+                </div>
+                <div class="category-card">
+                    <div class="category-icon financial">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="category-content">
+                        <h3>Financial</h3>
+                        <p>892 documents</p>
+                    </div>
+                </div>
+                <div class="category-card">
+                    <div class="category-icon personal">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="category-content">
+                        <h3>Personal</h3>
+                        <p>3,421 documents</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Upload Area -->
+            <div class="upload-area">
+                <div class="upload-zone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Drag & Drop Files Here</h3>
+                    <p>or <button class="upload-btn">browse files</button></p>
+                    <small>Supports PDF, DOC, DOCX, JPG, PNG (Max 10MB)</small>
+                </div>
+            </div>
+
+            <!-- Recent Documents -->
+            <div class="documents-grid">
+                <div class="document-card">
+                    <div class="document-preview">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div class="document-info">
+                        <h4>Student Transcript - John Doe</h4>
+                        <p>Academic • 2.4 MB • PDF</p>
+                        <div class="document-meta">
+                            <span class="upload-date">Uploaded 2 days ago</span>
+                            <span class="access-level restricted">Restricted</span>
+                        </div>
+                    </div>
+                    <div class="document-actions">
+                        <button class="btn-icon" title="Download"><i class="fas fa-download"></i></button>
+                        <button class="btn-icon" title="Share"><i class="fas fa-share"></i></button>
+                        <button class="btn-icon" title="More"><i class="fas fa-ellipsis-v"></i></button>
+                    </div>
+                </div>
+
+                <div class="document-card">
+                    <div class="document-preview">
+                        <i class="fas fa-file-word"></i>
+                    </div>
+                    <div class="document-info">
+                        <h4>Staff Employment Contract</h4>
+                        <p>Administrative • 1.8 MB • DOCX</p>
+                        <div class="document-meta">
+                            <span class="upload-date">Uploaded 1 week ago</span>
+                            <span class="access-level confidential">Confidential</span>
+                        </div>
+                    </div>
+                    <div class="document-actions">
+                        <button class="btn-icon" title="Download"><i class="fas fa-download"></i></button>
+                        <button class="btn-icon" title="Share"><i class="fas fa-share"></i></button>
+                        <button class="btn-icon" title="More"><i class="fas fa-ellipsis-v"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Examples -->
+    <div class="modal-overlay" id="addStudentModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add New Student</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form class="form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" class="form-input" placeholder="Enter first name">
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" class="form-input" placeholder="Enter last name">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Registration Number</label>
+                            <input type="text" class="form-input" placeholder="UNI/2024/XXX">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" class="form-input" placeholder="student@university.edu">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Faculty</label>
+                            <select class="form-select">
+                                <option>Select Faculty</option>
+                                <option>Engineering</option>
+                                <option>Medicine</option>
+                                <option>Arts</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Level</label>
+                            <select class="form-select">
+                                <option>Select Level</option>
+                                <option>100</option>
+                                <option>200</option>
+                                <option>300</option>
+                                <option>400</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline">Cancel</button>
+                <button class="btn btn-primary">Add Student</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast success" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span>Student added successfully!</span>
+        <button class="toast-close">&times;</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

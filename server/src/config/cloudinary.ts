@@ -1,6 +1,4 @@
 import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import multer from 'multer';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -20,6 +18,19 @@ export const deleteFromCloudinary = async (publicId: string) => {
   }
 };
 
+export const uploadToCloudinary = async (filePath: string, folder: string = 'urms/general') => {
+  try {
+    const result = await cloudinary.uploader.upload(filePath, {
+      folder,
+      resource_type: 'auto',
+    });
+    return result;
+  } catch (error) {
+    console.error('Error uploading to Cloudinary:', error);
+    throw error;
+  }
+}
+
 export const getCloudinaryUrl = (publicId: string, options: any = {}) => {
   return cloudinary.url(publicId, options);
 };
@@ -33,20 +44,5 @@ export const getOptimizedImageUrl = (publicId: string, width?: number, height?: 
     fetch_format: 'auto'
   });
 };
-
-export const uploadAny = multer({
-  storage: new CloudinaryStorage({
-    cloudinary,
-    params: (req, file) => ({
-      folder: 'urms/general',
-      resource_type: 'auto',
-      use_filename: true,
-      unique_filename: true,
-    }),
-  }),
-  limits: {
-    fileSize: 100 * 1024 * 1024,
-  },
-});
 
 export default cloudinary;

@@ -1,4 +1,0 @@
-staffId,userId,department,faculty,position,rank,employmentType,dateOfAppointment,currentStatus,workScheduleType,basicSalary,housing,transport,medical,other,totalSalary,payGrade,isActive,lastUpdated,updatedBy,version,createdAt,updatedAt
-STF001,60f7fbcf9f1b146f5a75f9d4,Computer Science,Science,Lecturer I,Academic,academic,2020-05-01,active,full-time,120000,20000,10000,5000,5000,160000,CONUASS 7,True,2024-07-06,60f7fbcf9f1b146f5a75f9d4,1,2020-05-01,2024-07-06
-STF002,60f7fbcf9f1b146f5a75f9d5,Electrical Engineering,Engineering,Senior Lecturer,Academic,academic,2018-03-15,active,full-time,180000,25000,15000,10000,10000,240000,CONUASS 5,True,2024-07-06,60f7fbcf9f1b146f5a75f9d5,1,2018-03-15,2024-07-06
-STF003,60f7fbcf9f1b146f5a75f9d6,English Literature,Arts,Associate Professor,Academic,academic,2015-10-10,active,full-time,250000,30000,20000,15000,15000,330000,CONUASS 3,True,2024-07-06,60f7fbcf9f1b146f5a75f9d6,1,2015-10-10,2024-07-06

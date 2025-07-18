@@ -1,0 +1,58 @@
+make sure the project meet the following requirement 1. Admin User (Registrar)
+Activities organized in modular form are to:
+i. Login
+ii. Add New User
+iii. Update/Delete Users
+iv. Logout
+
+2. Staff’s User (Administrative Registry)
+Activities organized in modular form are to:
+i. Login
+ii. Add Records
+iii. View Records
+iv. Retrieve Records
+v. Update Records (Staff and Students)
+vi. Create/Update Nominal Roll, Promotions, Leave Grants, Employment, etc.
+vii. Write Reports
+viii. Delete Records
+
+3. Staff’s User (Student’s Affairs)
+Activities organized in modular form are to:
+i. Login
+ii. Hostel Allocations
+iii. Verify Check-in/Out Student from Hostel
+iv. Download Student Reports
+v. Upload Students’ Results
+vi. Checking of Admission Status
+vii. Mobilize/Upload Student’s Records to the dedicated websites (JAMB, NYSC, etc.)
+
+4. Student’s User
+Activities organized in modular form are to:
+i. Login
+ii. Create Student Profile
+iii. Check Admission
+iv. Make Fee Payment
+v. Check Semester Result
+vi. Register Courses Per Semester
+vii. Check Wrong Course
+viii. Process Final Clearance
+ix. Download Statement of Result
+x. Request for Transcripts
+xi. Logout
+
+5. Academic Staff (Lecturer’s) User
+Activities organized in modular form are to:
+i. Login
+ii. Check Course Allocation
+iii. Upload Results
+iv. Update/Delete Results
+v. Logout
+
+6. Head Department’s User
+Activities organized in modular form are to:
+i. Login
+ii. Upload Results
+iii. Create Course Allocation
+iv. Course Reconciliation
+v. Add New Staff
+vi. Logout. still keep the ui and design but it must meet the requirement above with the image and we are still using mern stack framework

@@ -17,13 +17,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, staff })
 
   const { data: coursesData } = useQuery('courses', coursesAPI.getAll, { enabled: isOpen });
 
-  useEffect(() => {
-    if (staff) {
-      setFormData(staff);
-    } else {
-      setFormData({});
-    }
-  }, [staff, isOpen]);
+   
 
   const mutation = useMutation(staffAPI.create, {
     onSuccess: () => {
@@ -39,81 +33,12 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, staff })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
-    if (name === 'teachingLoad.courses') {
-      const selectedCourses = Array.from(e.target.selectedOptions, option => option.value);
-      setFormData(prev => ({
-        ...prev,
-        teachingLoad: {
-          ...prev.teachingLoad,
-          courses: selectedCourses,
-        },
-      }));
-    } else if (name.includes('.')) {
-      const keys = name.split('.');
-      setFormData((prev: any) => {
-        let temp = { ...prev };
-        let current = temp;
-        for (let i = 0; i < keys.length - 1; i++) {
-          current[keys[i]] = current[keys[i]] || {};
-          current = current[keys[i]];
-        }
-        current[keys[keys.length - 1]] = value;
-        return temp;
-      });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    const {
-      staffId,
-      email,
-      password,
-      profile,
-      phone,
-      gender,
-      dateOfBirth,
-      address,
-      emergencyContact,
-      nextOfKin,
-      employmentInfo,
-      compensation,
-    } = formData;
-
-    const payload = {
-      staffId,
-      email,
-      password,
-      profile,
-      phone,
-      gender,
-      dateOfBirth,
-      address,
-      emergencyContact,
-      nextOfKin,
-      employmentInfo: {
-        ...employmentInfo,
-        dateOfAppointment: new Date(employmentInfo.dateOfAppointment),
-        currentStatus: employmentInfo.currentStatus,
-      },
-      compensation: {
-        basicSalary: Number(compensation?.basicSalary) || 0,
-        allowances: {
-          housing: Number(compensation?.allowances?.housing) || 0,
-          transport: Number(compensation?.allowances?.transport) || 0,
-          medical: Number(compensation?.allowances?.medical) || 0,
-          other: Number(compensation?.allowances?.other) || 0,
-        },
-        totalSalary: 0, // auto-calculated in backend
-        payGrade: compensation?.payGrade || '',
-      },
-    };
-
-    mutation.mutate(payload);
+    mutation.mutate(formData);
   };
 
   if (!isOpen) return null;
@@ -179,7 +104,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, staff })
               className="input mt-1 block w-full h-32"
               value={formData.teachingLoad?.courses || []}
             >
-              {coursesData?.courses.map((course: any) => (
+              {(coursesData?.courses || []).map((course: any) => (
                 <option key={course._id} value={course._id}>
                   {course.courseName} ({course.courseCode})
                 </option>

@@ -1,44 +1,39 @@
 import express from 'express';
-import { uploadAny } from '../config/cloudinary.js';
 import Document from '../models/Document.js';
 import { auth } from '../middleware/auth.js';
-import { deleteFromCloudinary } from '../config/cloudinary.js';
-
-
+import { deleteFromCloudinary, uploadToCloudinary } from '../config/cloudinary.js';
+import { UploadedFile } from 'express-fileupload';
 
 const router = express.Router();
 
-router.post('/upload', auth, uploadAny.single('file'), async (req, res) => {
+router.post('/upload', auth, async (req, res) => {
   try {
-    console.log('1. Received upload request');
-    if (!req.file) {
-      console.log('1.1. No file uploaded');
+    if (!req.files || Object.keys(req.files).length === 0) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    console.log('2. File received', req.file);
-    const uploadedFile = req.file as any;
+    const file = req.files.file as UploadedFile;
 
-    console.log('3. Creating new Document instance');
+    // Upload to Cloudinary
+    const result = await uploadToCloudinary(file.tempFilePath, 'urms/general');
+
     const document = new Document({
-      title: req.body.title || uploadedFile.originalname,
+      title: req.body.title || file.name,
       category: req.body.category || 'general',
       accessLevel: req.body.accessLevel || 'private',
-      originalName: uploadedFile.originalname,
-      fileName: uploadedFile.filename || uploadedFile.originalname, // Use filename from multer or originalname
-      fileType: uploadedFile.format || uploadedFile.mimetype.split('/')[1],
-      fileSize: uploadedFile.size,
-      mimeType: uploadedFile.mimetype,
-      cloudinaryId: uploadedFile.public_id,
-      cloudinaryUrl: uploadedFile.url,
-      cloudinarySecureUrl: uploadedFile.secure_url,
-      cloudinaryFolder: uploadedFile.folder || 'urms/general', // Use folder from Cloudinary response or default
+      originalName: file.name,
+      fileName: result.public_id,
+      fileType: result.format,
+      fileSize: result.bytes,
+      mimeType: file.mimetype,
+      cloudinaryId: result.public_id,
+      cloudinaryUrl: result.url,
+      cloudinarySecureUrl: result.secure_url,
+      cloudinaryFolder: result.folder || 'urms/general',
       uploadedBy: (req as any).user._id,
     });
 
-    console.log('4. Saving document to database');
     await document.save();
-    console.log('5. Document saved, sending response');
     res.status(201).json(document);
   } catch (error) {
     console.error('Upload error caught:', error);
@@ -48,7 +43,19 @@ router.post('/upload', auth, uploadAny.single('file'), async (req, res) => {
 
 router.get('/', auth, async (req, res) => {
   try {
-    const documents = await Document.find({ uploadedBy: (req as any).user._id });
+    const { courseCode, category } = req.query;
+    const filter: any = { uploadedBy: (req as any).user._id };
+
+    if (courseCode) {
+      filter.relatedToType = 'Course';
+      filter.relatedToId = courseCode;
+    }
+
+    if (category) {
+      filter.category = category;
+    }
+
+    const documents = await Document.find(filter);
     res.json(documents);
   } catch (error) {
     console.error(error);
